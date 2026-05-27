@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dev Log Post</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg-dark:       #0A0A0F;
+  --bg-mid:        #14141F;
+  --bg-card:       #181826;
+  --neon-cyan:     #00FFFF;
+  --neon-purple:   #B300FF;
+  --neon-pink:     #FF00AA;
+  --health-red:    #FF3333;
+  --stamina-green: #33FF99;
+  --xp-yellow:     #FFCC00;
+  --text-primary:  #EDEDFF;
+  --text-dim:      #8A8AA8;
+  --text-fade:     #5E5E78;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg-dark);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The poster: fixed Telegram-friendly portrait. */
+.poster {
+  width: 1080px;
+  height: 1350px;
+  background:
+    radial-gradient(900px 600px at 50% -10%, rgba(0,255,255,0.08), transparent 60%),
+    radial-gradient(700px 500px at 100% 60%, rgba(179,0,255,0.08), transparent 60%),
+    radial-gradient(700px 500px at 0% 80%, rgba(255,0,170,0.05), transparent 60%),
+    var(--bg-dark);
+  position: relative;
+  overflow: hidden;
+  padding: 80px 70px;
+  display: flex; flex-direction: column;
+}
+
+/* subtle grid overlay */
+.poster::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask: radial-gradient(ellipse 80% 80% at center, #000, transparent 95%);
+  pointer-events: none;
+}
+/* scanlines */
+.poster::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 2px, transparent 2px 5px);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* ===== Top meta bar ===== */
+.meta-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; z-index: 1;
+  margin-bottom: 40px;
+}
+.meta-left { display: flex; align-items: center; gap: 14px; }
+.meta-dot {
+  width: 10px; height: 10px;
+  background: var(--neon-cyan);
+  border-radius: 1px;
+  box-shadow: 0 0 14px var(--neon-cyan);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }
+.meta-text {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.meta-tag {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  padding: 8px 14px;
+  border: 1px solid rgba(0,255,255,0.4);
+  border-radius: 3px;
+  background: rgba(0,255,255,0.06);
+}
+
+/* ===== Title ===== */
+.title-wrap {
+  position: relative; z-index: 1;
+  margin-bottom: 50px;
+}
+.title-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--text-fade);
+  margin-bottom: 16px;
+}
+.title-main {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 96px;
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.title-main .slash { color: var(--neon-cyan); }
+.title-sub {
+  font-family: var(--font-body);
+  font-size: 22px;
+  color: var(--text-dim);
+  margin-top: 22px;
+  line-height: 1.5;
+  max-width: 720px;
+}
+
+/* ===== Section ===== */
+.section {
+  position: relative; z-index: 1;
+  margin-bottom: 38px;
+}
+.section-head {
+  display: flex; align-items: baseline; gap: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+}
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-fade);
+  letter-spacing: 0.24em;
+}
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.section-cap {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-left: auto;
+}
+
+/* ===== Icons section ===== */
+.icons-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 10px;
+}
+.icon-card {
+  aspect-ratio: 1 / 1;
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.icon-card svg { width: 58%; height: 58%; }
+
+.icons-subline {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  display: flex; justify-content: space-between;
+}
+.icons-subline .right { color: var(--text-fade); }
+
+/* ===== Weapons section ===== */
+.weapons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.wpn-tile {
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 12px;
+  position: relative;
+}
+.wpn-tile canvas {
+  display: block; width: 100%; height: 130px;
+  background: #0a0a10; border-radius: 3px;
+}
+.wpn-tile .name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-top: 8px;
+  font-weight: 600;
+}
+.wpn-tile .desc {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+/* ===== Footer ===== */
+.footer {
+  margin-top: auto;
+  position: relative; z-index: 1;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 24px;
+}
+.footer-left {
+  font-family: var(--font-body);
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1.4;
+  max-width: 540px;
+}
+.footer-left b {
+  color: var(--neon-cyan);
+  font-weight: 600;
+}
+.footer-right {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-fade);
+  text-align: right;
+}
+.footer-right .v { color: var(--neon-cyan); font-size: 14px; }
+
+/* Corner ticks */
+.corner {
+  position: absolute;
+  width: 28px; height: 28px;
+  border-color: var(--neon-cyan); opacity: 0.5;
+  z-index: 2;
+}
+.corner.tl { top: 30px; left: 30px; border-top: 1px solid; border-left: 1px solid; }
+.corner.tr { top: 30px; right: 30px; border-top: 1px solid; border-right: 1px solid; }
+.corner.bl { bottom: 30px; left: 30px; border-bottom: 1px solid; border-left: 1px solid; }
+.corner.br { bottom: 30px; right: 30px; border-bottom: 1px solid; border-right: 1px solid; }
+</style>
+</head>
+<body>
+
+<div class="poster" id="poster">
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <!-- ===== Meta bar ===== -->
+  <div class="meta-bar">
+    <div class="meta-left">
+      <div class="meta-dot"></div>
+      <div class="meta-text">DEV LOG · WIP</div>
+    </div>
+    <div class="meta-tag">UI &amp; FX PASS</div>
+  </div>
+
+  <!-- ===== Title ===== -->
+  <div class="title-wrap">
+    <div class="title-eyebrow">— THIS WEEK —</div>
+    <div class="title-main">NEW HUD <span class="slash">/</span><br>WEAPON FX</div>
+    <div class="title-sub">A fresh icon set for every stat &amp; weapon, plus motion design for all eight attack effects. Pure visuals — no gameplay touched.</div>
+  </div>
+
+  <!-- ===== Section 1: Icons ===== -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <span class="section-title">HUD Icons</span>
+      <span class="section-cap">10 stats · 8 weapons</span>
+    </div>
+
+    <div class="icons-grid">
+      <!-- Heart -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,51,51,0.12)"/>
+        </svg>
+      </div>
+      <!-- Bolt -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M36 8 L18 34 L28 34 L24 56 L46 28 L34 28 L40 8 Z" stroke="#33FF99" stroke-width="2.5" stroke-linejoin="round" fill="rgba(51,255,153,0.12)"/></svg>
+      </div>
+      <!-- Sword -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M32 6 L36 10 L36 42 L32 46 L28 42 L28 10 Z" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.10)"/>
+          <line x1="20" y1="42" x2="44" y2="42" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="32" y1="42" x2="32" y2="56" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <!-- Rapid Slash -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M18 52 L46 24 L54 16 L50 26 L22 54 Z" stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(0,255,255,0.12)"/>
+          <line x1="14" y1="48" x2="24" y2="58" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M10 38 Q20 32 30 32" stroke="#00FFFF" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>
+          <path d="M8 28 Q18 22 28 22" stroke="#00FFFF" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.45"/>
+        </svg>
+      </div>
+      <!-- Boot -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M14 38 L14 16 L26 16 L26 28 L42 28 L50 38 L50 48 L14 48 Z" stroke="#33FF99" stroke-width="2.5" stroke-linejoin="round" fill="rgba(51,255,153,0.10)"/></svg>
+      </div>
+      <!-- Magnet -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M16 14 L16 36 Q16 50 32 50 Q48 50 48 36 L48 14 L40 14 L40 36 Q40 42 32 42 Q24 42 24 36 L24 14 Z" stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round"/>
+          <rect x="16" y="14" width="8" height="8" fill="#FF3333"/>
+          <rect x="40" y="14" width="8" height="8" fill="#00FFFF"/>
+        </svg>
+      </div>
+      <!-- Target -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="20" stroke="#FFCC00" stroke-width="2.5" fill="none"/>
+          <circle cx="32" cy="32" r="12" stroke="#FFCC00" stroke-width="2" fill="none" opacity="0.7"/>
+          <circle cx="32" cy="32" r="4" fill="#FFCC00"/>
+        </svg>
+      </div>
+      <!-- Star -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M32 6 L36 26 L56 32 L36 38 L32 58 L28 38 L8 32 L28 26 Z" stroke="#FFCC00" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,204,0,0.15)"/></svg>
+      </div>
+      <!-- Crystal -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M32 6 L48 22 L40 56 L24 56 L16 22 Z" stroke="#B300FF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(179,0,255,0.15)"/></svg>
+      </div>
+      <!-- Dash -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M10 16 L24 32 L10 48" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.3"/>
+          <path d="M22 16 L36 32 L22 48" stroke="#00FFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
+          <path d="M34 12 L52 32 L34 52" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="rgba(0,255,255,0.10)"/>
+        </svg>
+      </div>
+
+      <!-- 8 weapon icons row -->
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M32 4 L37 8 L37 44 L32 50 L27 44 L27 8 Z" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.12)"/>
+          <line x1="16" y1="44" x2="48" y2="44" stroke="#00FFFF" stroke-width="3"/>
+          <rect x="29" y="44" width="6" height="14" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.15)"/>
+        </svg>
+      </div>
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <line x1="10" y1="54" x2="44" y2="20" stroke="#00FFFF" stroke-width="2.5"/>
+          <path d="M38.5 20.4 L48.4 10.5 L55.5 17.6 L45.6 27.5 Z" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.15)"/>
+          <line x1="8" y1="56" x2="14" y2="50" stroke="#00FFFF" stroke-width="3"/>
+        </svg>
+      </div>
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <rect x="6" y="26" width="16" height="12" stroke="#B300FF" stroke-width="2.5" fill="rgba(179,0,255,0.15)"/>
+          <line x1="22" y1="32" x2="56" y2="32" stroke="#B300FF" stroke-width="3"/>
+          <path d="M52 26 L60 32 L52 38 Z" stroke="#B300FF" stroke-width="2" fill="rgba(179,0,255,0.3)"/>
+        </svg>
+      </div>
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="6" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.25)"/>
+          <circle cx="32" cy="32" r="14" stroke="#00FFFF" stroke-width="2" opacity="0.7"/>
+          <circle cx="32" cy="32" r="22" stroke="#00FFFF" stroke-width="2" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M32 6 L52 18 L52 42 L32 54 L12 42 L12 18 Z" stroke="#FF00AA" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,0,170,0.12)"/>
+          <circle cx="32" cy="32" r="3" fill="#FF00AA"/>
+        </svg>
+      </div>
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <rect x="14" y="42" width="36" height="10" stroke="#33FF99" stroke-width="2.5" fill="rgba(51,255,153,0.10)"/>
+          <rect x="16" y="30" width="32" height="10" stroke="#33FF99" stroke-width="2.5" fill="rgba(51,255,153,0.15)"/>
+          <rect x="20" y="18" width="24" height="10" stroke="#33FF99" stroke-width="2.5" fill="rgba(51,255,153,0.20)"/>
+        </svg>
+      </div>
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle cx="12" cy="20" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.4)"/>
+          <circle cx="32" cy="14" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.4)"/>
+          <circle cx="50" cy="32" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.4)"/>
+          <circle cx="28" cy="48" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.4)"/>
+          <path d="M14 20 L20 16 L24 22 L30 14 M35 14 L42 22 L46 18 L50 30 M48 33 L40 40 L34 36 L30 46" stroke="#FF00AA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <div class="icon-card">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M10 54 L8 56 L18 50 L46 22 L52 12 L42 18 L14 46 L8 56 Z" stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(0,255,255,0.12)"/>
+          <circle cx="22" cy="50" r="1.5" fill="#00FFFF"/>
+          <circle cx="16" cy="56" r="1.2" fill="#00FFFF" opacity="0.7"/>
+        </svg>
+      </div>
+      <!-- pad to 20 -->
+      <div class="icon-card" style="opacity:0.3"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="20" width="24" height="24" stroke="#5E5E78" stroke-width="2" fill="none"/></svg></div>
+      <div class="icon-card" style="opacity:0.3"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="20" width="24" height="24" stroke="#5E5E78" stroke-width="2" fill="none" stroke-dasharray="3 2"/></svg></div>
+    </div>
+
+    <div class="icons-subline">
+      <span>Stats &amp; weapons · one stroke weight · own accent color</span>
+      <span class="right">Drops in at 16–48 px</span>
+    </div>
+  </div>
+
+  <!-- ===== Section 2: Weapon FX ===== -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <span class="section-title">Weapon FX</span>
+      <span class="section-cap">Motion design · 8 attacks</span>
+    </div>
+
+    <div class="weapons-grid">
+      <div class="wpn-tile">
+        <canvas id="fx1"></canvas>
+        <div class="name">Greatsword Slash</div>
+        <div class="desc">120° arc · sparks at apex</div>
+      </div>
+      <div class="wpn-tile">
+        <canvas id="fx2"></canvas>
+        <div class="name">Ghost Beam</div>
+        <div class="desc">Triple-layer laser · heat shimmer</div>
+      </div>
+      <div class="wpn-tile">
+        <canvas id="fx3"></canvas>
+        <div class="name">Chain Lightning</div>
+        <div class="desc">Crackles between targets</div>
+      </div>
+      <div class="wpn-tile">
+        <canvas id="fx4"></canvas>
+        <div class="name">Hex Pulse</div>
+        <div class="desc">Virus scatter · pink</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Footer ===== -->
+  <div class="footer">
+    <div class="footer-left">
+      <b>Next up →</b> character sprites, ambient particles, and a deeper polish on enemy hit reactions. Gameplay stays exactly as it is.
+    </div>
+    <div class="footer-right">
+      <div>v · <span class="v">0.4 — UI</span></div>
+      <div style="margin-top:4px;">WIP · 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Per-effect canvas drawing (frozen at "peak" moment) ========== -->
+<script>
+function setupCanvas(canvas, dpr = 2) {
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w, h };
+}
+
+function bg(ctx, w, h) {
+  ctx.fillStyle = '#0A0A10';
+  ctx.fillRect(0, 0, w, h);
+  const grad = ctx.createRadialGradient(w*0.5, h*0.5, 0, w*0.5, h*0.5, w*0.7);
+  grad.addColorStop(0, 'rgba(40, 20, 60, 0.4)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 22) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += 22) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+}
+
+function drawPlayer(ctx, x, y) {
+  const halo = ctx.createRadialGradient(x, y, 0, x, y, 22);
+  halo.addColorStop(0, 'rgba(0,255,255,0.55)');
+  halo.addColorStop(1, 'rgba(0,255,255,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,180,200,0.95)';
+  ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#E8FFFF';
+  ctx.beginPath(); ctx.arc(x, y - 1, 5, 0, Math.PI*2); ctx.fill();
+}
+function drawEnemy(ctx, x, y, hit = 0) {
+  ctx.fillStyle = 'rgba(255,80,80,0.18)';
+  ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = hit > 0 ? `rgba(255, ${80 + 175*hit}, ${80 + 175*hit}, 0.95)` : 'rgba(180,50,50,0.95)';
+  ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2); ctx.fill();
+}
+
+// === FX 1: Greatsword slash (peak strike) ===
+(function() {
+  const c = document.getElementById('fx1');
+  const { ctx, w, h } = setupCanvas(c);
+  bg(ctx, w, h);
+  const px = w * 0.30, py = h * 0.50;
+  // Enemies
+  drawEnemy(ctx, px + 60, py - 24, 0.7);
+  drawEnemy(ctx, px + 72, py + 22, 0.5);
+  drawPlayer(ctx, px, py);
+  const r = 78, arc = 2.0;
+  // Thick cyan arc
+  ctx.shadowBlur = 16; ctx.shadowColor = '#00FFFF';
+  ctx.strokeStyle = '#00FFFF';
+  ctx.lineWidth = 11; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(px, py, r, -arc/2, arc/2); ctx.stroke();
+  // White core
+  ctx.shadowBlur = 10; ctx.shadowColor = '#FFFFFF';
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(px, py, r, -arc/2 + 0.12, arc/2 - 0.12); ctx.stroke();
+  ctx.shadowBlur = 0;
+  // Sparks
+  for (let i = 0; i < 12; i++) {
+    const a = (i - 5.5) * 0.17;
+    const sx = px + Math.cos(a) * r * 1.1;
+    const sy = py + Math.sin(a) * r * 1.1;
+    ctx.shadowBlur = 8; ctx.shadowColor = '#FFFFFF';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+})();
+
+// === FX 2: Ghost Beam (steady fire) ===
+(function() {
+  const c = document.getElementById('fx2');
+  const { ctx, w, h } = setupCanvas(c);
+  bg(ctx, w, h);
+  const px = w * 0.18, py = h * 0.50;
+  drawEnemy(ctx, px + 70, py - 2, 0.9);
+  drawEnemy(ctx, px + 130, py + 6, 0.9);
+  drawPlayer(ctx, px, py);
+  const endX = w - 12;
+  // halo
+  ctx.shadowBlur = 24; ctx.shadowColor = '#B300FF';
+  ctx.strokeStyle = 'rgba(179,0,255,0.55)';
+  ctx.lineWidth = 18; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(px + 10, py); ctx.lineTo(endX, py); ctx.stroke();
+  // mid
+  ctx.shadowBlur = 14; ctx.shadowColor = '#00FFFF';
+  ctx.strokeStyle = '#00FFFF';
+  ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(px + 10, py); ctx.lineTo(endX, py); ctx.stroke();
+  // core
+  ctx.shadowBlur = 8; ctx.shadowColor = '#FFFFFF';
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(px + 10, py); ctx.lineTo(endX, py); ctx.stroke();
+  ctx.shadowBlur = 0;
+  // tip burst
+  ctx.shadowBlur = 12; ctx.shadowColor = '#B300FF';
+  ctx.fillStyle = 'rgba(179,0,255,0.55)';
+  ctx.beginPath(); ctx.arc(endX, py, 11, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath(); ctx.arc(endX, py, 4, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // shimmer particles
+  for (let i = 0; i < 6; i++) {
+    const sx = px + 16 + (endX - px - 16) * (i / 6);
+    const sy = py - 6 - (i % 3) * 4;
+    ctx.shadowBlur = 4; ctx.shadowColor = '#FF80FF';
+    ctx.fillStyle = 'rgba(255,180,255,0.5)';
+    ctx.beginPath(); ctx.arc(sx, sy, 1.4, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+})();
+
+// === FX 3: Chain Lightning (mid-cascade) ===
+(function() {
+  const c = document.getElementById('fx3');
+  const { ctx, w, h } = setupCanvas(c);
+  bg(ctx, w, h);
+  const px = w * 0.18, py = h * 0.50;
+  const enemies = [
+    { x: w * 0.45, y: py - 24 },
+    { x: w * 0.75, y: py + 4 },
+    { x: w * 0.55, y: py + 30 },
+  ];
+  enemies.forEach((e, i) => drawEnemy(ctx, e.x, e.y, i < 2 ? 0.85 : 0.4));
+  drawPlayer(ctx, px, py);
+
+  function jagged(x1, y1, x2, y2, seg = 8, amp = 7, seed = 1) {
+    let s = seed * 9301 + 49297;
+    const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const pts = [[x1, y1]];
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
+    for (let i = 1; i < seg; i++) {
+      const k = i / seg;
+      const r = (rand() - 0.5) * 2 * amp;
+      pts.push([x1 + (x2-x1)*k + nx*r, y1 + (y2-y1)*k + ny*r]);
+    }
+    pts.push([x2, y2]);
+    return pts;
+  }
+  function drawLn(pts, color, width, glow) {
+    ctx.shadowBlur = glow; ctx.shadowColor = color;
+    ctx.strokeStyle = color; ctx.lineWidth = width;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+  let last = [px + 8, py];
+  enemies.forEach((e, i) => {
+    const pts = jagged(last[0], last[1], e.x, e.y, 7, 8, (i + 1) * 31);
+    drawLn(pts, '#FF00AA', 5, 16);
+    drawLn(pts, '#FFFFFF', 1.4, 6);
+    // endpoint spark
+    if (i < 2) {
+      ctx.shadowBlur = 14; ctx.shadowColor = '#FF00AA';
+      ctx.fillStyle = 'rgba(255,0,170,0.85)';
+      ctx.beginPath(); ctx.arc(e.x, e.y, 7, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    last = [e.x, e.y];
+  });
+})();
+
+// === FX 4: Hex Pulse (mid-burst) ===
+(function() {
+  const c = document.getElementById('fx4');
+  const { ctx, w, h } = setupCanvas(c);
+  bg(ctx, w, h);
+  const px = w * 0.50, py = h * 0.50;
+  // Enemies around
+  drawEnemy(ctx, px + 40, py - 26, 0.7);
+  drawEnemy(ctx, px - 32, py + 32, 0.8);
+  drawEnemy(ctx, px + 50, py + 28, 0.5);
+  drawPlayer(ctx, px, py);
+
+  function hex(cx, cy, r, rot = 0) {
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const a = rot + i * Math.PI / 3;
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    return pts;
+  }
+  function poly(pts, fill, stroke, sw, glow) {
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) {
+      ctx.shadowBlur = glow || 0; ctx.shadowColor = stroke;
+      ctx.strokeStyle = stroke; ctx.lineWidth = sw;
+      ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+  }
+  // Outer expanded hex
+  poly(hex(px, py, 56, -0.4), null, 'rgba(255,0,170,0.7)', 2.2, 16);
+  // Inner pumping hex
+  poly(hex(px, py, 28, 0.6), 'rgba(255,0,170,0.18)', '#FF00AA', 2.6, 14);
+  // Virus dots
+  const dotPositions = [
+    [40, -50], [60, 0], [10, 60], [-40, -50], [-60, 10], [-30, 60],
+    [55, -22], [-50, -10], [22, -58]
+  ];
+  dotPositions.forEach(([dx, dy]) => {
+    ctx.shadowBlur = 6; ctx.shadowColor = '#FF00AA';
+    ctx.fillStyle = 'rgba(255,0,170,0.7)';
+    ctx.beginPath(); ctx.arc(px + dx, py + dy, 1.6, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+})();
+</script>
+
+<!-- Auto-render poster to PNG (for direct export) -->
+<script>
+window.addEventListener('load', async () => {
+  // Wait a tick for fonts/canvases to settle
+  await new Promise(r => setTimeout(r, 400));
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (e) {}
+  }
+  const node = document.getElementById('poster');
+  const canvas = await html2canvas(node, {
+    backgroundColor: '#0A0A0F',
+    scale: 1,                 // node is already 1080×1350
+    useCORS: true,
+    logging: false,
+    width: 1080,
+    height: 1350,
+    windowWidth: 1080,
+    windowHeight: 1350,
+  });
+  // Stash dataURL for retrieval via eval_js
+  window.__posterPng = canvas.toDataURL('image/png');
+  window.__posterReady = true;
+  // Also surface a download button for the user
+  const btn = document.createElement('a');
+  btn.href = window.__posterPng;
+  btn.download = 'devlog-post.png';
+  btn.textContent = 'Download PNG';
+  Object.assign(btn.style, {
+    position: 'fixed', top: '16px', right: '16px',
+    fontFamily: 'JetBrains Mono, monospace',
+    fontSize: '13px', letterSpacing: '0.2em', textTransform: 'uppercase',
+    fontWeight: '700',
+    color: '#0A0A0F', textDecoration: 'none',
+    padding: '14px 22px', background: '#00FFFF',
+    border: '1px solid #00FFFF', borderRadius: '4px',
+    zIndex: '999',
+    boxShadow: '0 8px 32px rgba(0,255,255,0.4), 0 0 24px rgba(0,255,255,0.5)',
+    cursor: 'pointer',
+  });
+  document.body.appendChild(btn);
+
+  // Soft hint label below
+  const hint = document.createElement('div');
+  hint.textContent = '↑ click to save · upload to Telegram';
+  Object.assign(hint.style, {
+    position: 'fixed', top: '64px', right: '16px',
+    fontFamily: 'JetBrains Mono, monospace',
+    fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
+    color: '#8A8AA8',
+    zIndex: '999',
+    pointerEvents: 'none',
+  });
+  document.body.appendChild(hint);
+});
+</script>
+</body>
+</html>

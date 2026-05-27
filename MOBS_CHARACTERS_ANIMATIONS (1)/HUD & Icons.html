@@ -1,0 +1,1547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HUD & Icons — Visual Spec</title>
+<meta name="viewport" content="width=1440">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Tokens — pulled from the game's GameTheme.kt
+   ============================================================ */
+:root {
+  --bg-dark:        #0A0A0F;
+  --bg-mid:         #14141F;
+  --bg-card:        #181826;
+  --bg-card-soft:   #1F1F2E;
+  --hairline:       rgba(255,255,255,0.06);
+  --hairline-lit:   rgba(0,255,255,0.12);
+
+  --neon-cyan:      #00FFFF;
+  --neon-purple:    #B300FF;
+  --neon-pink:      #FF00AA;
+  --health-red:     #FF3333;
+  --stamina-green:  #33FF99;
+  --xp-yellow:      #FFCC00;
+  --rarity-gold:    #FFAA00;
+  --rarity-silver:  #CCCCDD;
+  --text-primary:   #EDEDFF;
+  --text-dim:       #8A8AA8;
+  --text-fade:      #5E5E78;
+
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(0,255,255,0.04), transparent 60%),
+    radial-gradient(900px 500px at 90% 30%, rgba(179,0,255,0.04), transparent 60%),
+    var(--bg-dark);
+  min-height: 100vh;
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+.wrap { max-width: 1320px; margin: 0 auto; padding: 64px 56px 120px; }
+
+/* Page top bar */
+.toplabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px;
+}
+.toplabel::before {
+  content: "";
+  width: 8px; height: 8px; background: var(--neon-cyan);
+  box-shadow: 0 0 12px var(--neon-cyan);
+  border-radius: 1px;
+}
+h1 {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 56px;
+  letter-spacing: 0.06em;
+  margin: 0 0 18px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+h1 .accent { color: var(--neon-cyan); }
+.lede {
+  font-size: 17px;
+  color: var(--text-dim);
+  max-width: 720px;
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+
+/* Section heads */
+.sec { margin-top: 96px; }
+.sec-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 18px;
+  margin-bottom: 36px;
+}
+.sec-head h2 {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin: 0;
+  font-weight: 700;
+  display: flex; gap: 14px; align-items: center;
+}
+.sec-head h2 .num {
+  color: var(--text-fade);
+  font-weight: 400;
+}
+.sec-head .meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--text-fade);
+  text-transform: uppercase;
+}
+.sec h3 {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0 0 18px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Palette strip
+   ============================================================ */
+.palette {
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px;
+  margin-bottom: 18px;
+}
+.swatch {
+  height: 96px;
+  border-radius: 4px;
+  border: 1px solid var(--hairline);
+  padding: 10px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+  font-family: var(--font-mono);
+}
+.swatch::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(80% 100% at 50% 0%, var(--c), transparent 70%);
+  opacity: 0.32;
+}
+.swatch > * { position: relative; z-index: 1; }
+.swatch .name { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-primary); }
+.swatch .hex { font-size: 10px; color: var(--text-dim); }
+.swatch .role { font-size: 9px; color: var(--text-fade); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ============================================================
+   Icon cards
+   ============================================================ */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+.icon-grid.weapons { grid-template-columns: repeat(4, 1fr); }
+.icon-grid.pickups { grid-template-columns: repeat(2, minmax(0, 380px)); }
+
+.icon-card {
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 18px 16px 14px;
+  position: relative;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.icon-card:hover {
+  border-color: var(--hairline-lit);
+  transform: translateY(-1px);
+}
+.icon-card::before {
+  /* Corner tick — small cyberpunk detail */
+  content: "";
+  position: absolute; top: 8px; right: 8px;
+  width: 14px; height: 14px;
+  border-top: 1px solid var(--neon-cyan);
+  border-right: 1px solid var(--neon-cyan);
+  opacity: 0.4;
+}
+.icon-stage {
+  background:
+    linear-gradient(180deg, #0c0c14, #0a0a10);
+  height: 96px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255,255,255,0.04);
+  position: relative;
+  overflow: hidden;
+}
+.icon-stage::after {
+  /* subtle scanline */
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+}
+.icon-stage svg { width: 56px; height: 56px; }
+
+.icon-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+.icon-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-fade);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.icon-card .px {
+  position: absolute; bottom: 12px; right: 14px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--text-fade);
+}
+
+/* size variations row at bottom of section */
+.sizes {
+  display: flex; align-items: center; gap: 28px;
+  padding: 18px 22px;
+  background: var(--bg-card);
+  border: 1px dashed rgba(0,255,255,0.14);
+  border-radius: 6px;
+  margin-top: 24px;
+}
+.sizes .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-right: 8px;
+}
+.sizes .col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.sizes .col .px-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-fade); letter-spacing: 0.14em; }
+.sizes svg { display: block; }
+
+/* ============================================================
+   HUD mockup — landscape Android (2400×1080)
+   Rendered at scale via transform
+   ============================================================ */
+.hud-frame-shell {
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 24px;
+  margin-top: 28px;
+}
+.hud-frame {
+  position: relative;
+  width: 1240px;
+  aspect-ratio: 20/9;
+  background: linear-gradient(180deg, #14202a 0%, #0c1014 60%, #0a0a0f 100%);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    inset 0 60px 160px rgba(0,180,180,0.06);
+}
+/* gameplay backdrop hint — biome-mood gradient + grid */
+.hud-frame::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(60% 80% at 30% 70%, rgba(120, 60, 180, 0.18), transparent 60%),
+    radial-gradient(50% 70% at 80% 40%, rgba(0, 200, 200, 0.10), transparent 60%);
+}
+.hud-frame::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -20px -20px;
+  mask: radial-gradient(ellipse 70% 60% at center, #000, transparent 95%);
+}
+.hud-frame .label {
+  position: absolute; bottom: 16px; left: 18px;
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
+  color: rgba(255,255,255,0.18);
+  z-index: 1;
+}
+
+/* HUD elements — positioned inside .hud-frame */
+.hud-layer { position: absolute; inset: 0; z-index: 5; padding: 18px 22px; }
+
+/* Top-left column */
+.hud-tl { position: absolute; top: 18px; left: 22px; display: flex; flex-direction: column; gap: 8px; width: 320px; }
+
+/* Stat bar */
+.bar-row { display: flex; align-items: center; gap: 8px; }
+.bar-icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.bar-icon svg { width: 22px; height: 22px; }
+.bar {
+  flex: 1; height: 10px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.bar .fill {
+  height: 100%;
+  background: var(--g);
+  box-shadow: 0 0 8px var(--shadow);
+}
+.bar .ticks {
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.4) 0 1px, transparent 1px 16px);
+  pointer-events: none;
+}
+.bar-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  width: 60px;
+  text-align: right;
+}
+
+/* Weapon slots row */
+.weapon-row { display: flex; gap: 6px; margin-top: 6px; }
+.wpn-slot {
+  width: 46px; height: 46px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid var(--hairline-lit);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.wpn-slot.empty { border-style: dashed; opacity: 0.5; }
+.wpn-slot svg { width: 30px; height: 30px; }
+.wpn-slot .lv {
+  position: absolute; bottom: 1px; right: 3px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--neon-cyan);
+  letter-spacing: 0.04em;
+}
+
+/* Top-right column */
+.hud-tr {
+  position: absolute; top: 18px; right: 22px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+.wave-display {
+  display: flex; align-items: baseline; gap: 8px;
+  font-family: var(--font-mono);
+}
+.wave-display .lbl {
+  font-size: 10px; letter-spacing: 0.32em; color: var(--text-dim); text-transform: uppercase;
+}
+.wave-display .num {
+  font-size: 28px; font-weight: 700; color: var(--neon-cyan);
+  text-shadow: 0 0 14px rgba(0,255,255,0.5);
+}
+.wave-display .sep { color: var(--text-fade); }
+.wave-display .total { font-size: 14px; color: var(--text-dim); font-weight: 500; }
+.biome-name {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.28em;
+  color: rgba(179,0,255,0.7); text-transform: uppercase;
+}
+.timer {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em;
+  color: var(--text-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.timer::before { content: ""; width: 6px; height: 6px; background: var(--neon-pink); border-radius: 50%; box-shadow: 0 0 8px var(--neon-pink); animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.upgrade-slots-row {
+  display: flex; gap: 5px;
+  margin-top: 4px;
+}
+.up-slot {
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid var(--hairline-lit);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+}
+.up-slot svg { width: 14px; height: 14px; }
+.up-slot.empty { border-style: dashed; opacity: 0.35; }
+.up-slot.gold { border-color: var(--rarity-gold); box-shadow: 0 0 6px rgba(255,170,0,0.4); }
+.up-slot.purple { border-color: var(--neon-purple); }
+.up-slot.cyan { border-color: var(--neon-cyan); }
+
+/* Bottom-right — joystick / dodge button hint */
+.hud-br {
+  position: absolute; right: 32px; bottom: 32px;
+  display: flex; gap: 18px; align-items: center;
+}
+.dodge-btn {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, rgba(0,255,255,0.15), rgba(0,255,255,0.02) 70%);
+  border: 2px solid var(--neon-cyan);
+  box-shadow: 0 0 24px rgba(0,255,255,0.25), inset 0 0 16px rgba(0,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+}
+.dodge-btn svg { width: 44px; height: 44px; }
+
+/* Bottom-left — joystick */
+.hud-bl { position: absolute; left: 36px; bottom: 36px; }
+.joystick {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.25);
+  position: relative;
+}
+.joystick::after {
+  content: "";
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+/* Pause button top-far-right */
+.pause-btn {
+  position: absolute; top: 18px; right: 22px;
+  /* placed inside hud-tr already — this just stylizes the icon */
+}
+
+/* Floating damage number sample */
+.dmg-sample {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  pointer-events: none;
+}
+.dmg-sample.crit { color: var(--xp-yellow); font-size: 28px; text-shadow: 0 0 12px rgba(255,204,0,0.8); top: 38%; left: 32%; transform: rotate(-6deg); }
+.dmg-sample.normal { color: var(--text-primary); font-size: 18px; top: 52%; left: 60%; }
+.dmg-sample.player-hit { color: var(--health-red); font-size: 22px; text-shadow: 0 0 10px rgba(255,51,51,0.8); top: 60%; left: 42%; }
+
+/* Player / enemy hints (just abstract circles for HUD context) */
+.entity {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.player-hint {
+  width: 36px; height: 36px;
+  left: 50%; top: 56%; transform: translate(-50%,-50%);
+  background: radial-gradient(circle, rgba(0,255,255,0.5), rgba(0,255,255,0.05) 70%);
+  border: 1.5px solid rgba(0,255,255,0.8);
+  box-shadow: 0 0 16px rgba(0,255,255,0.5);
+}
+.enemy-hint {
+  width: 26px; height: 26px;
+  background: radial-gradient(circle, rgba(255,51,51,0.5), rgba(255,51,51,0.05) 70%);
+  border: 1.5px solid rgba(255,51,51,0.6);
+}
+.enemy-hint.a { left: 28%; top: 38%; }
+.enemy-hint.b { left: 68%; top: 48%; }
+.enemy-hint.c { left: 40%; top: 70%; width: 18px; height: 18px; }
+.enemy-hint.d { left: 75%; top: 30%; width: 20px; height: 20px; }
+
+/* ============================================================
+   Annotation callouts on the HUD
+   ============================================================ */
+.cal-line {
+  position: absolute;
+  background: rgba(0,255,255,0.55);
+  z-index: 6;
+}
+.cal-dot {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+  transform: translate(-50%,-50%);
+  z-index: 7;
+}
+.callout {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  z-index: 7;
+  white-space: nowrap;
+  background: rgba(10,10,15,0.85);
+  padding: 4px 8px;
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius: 2px;
+}
+.callout .sub { color: var(--text-dim); margin-left: 8px; letter-spacing: 0.1em; }
+
+/* ============================================================
+   Spec table — implementation notes
+   ============================================================ */
+.spec-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 2fr;
+  gap: 18px;
+}
+.spec-block {
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 22px 24px;
+}
+.spec-block h4 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin: 0 0 14px;
+  font-weight: 700;
+}
+.spec-block ul {
+  margin: 0; padding: 0; list-style: none;
+  font-size: 13px; color: var(--text-dim); line-height: 1.65;
+}
+.spec-block li { padding: 2px 0; }
+.spec-block li code {
+  font-family: var(--font-mono); font-size: 12px;
+  background: rgba(0,255,255,0.08);
+  color: var(--neon-cyan);
+  padding: 1px 6px; border-radius: 2px;
+}
+.spec-block li b { color: var(--text-primary); font-weight: 600; }
+
+.implement-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.implement-table th, .implement-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-dim);
+}
+.implement-table th {
+  color: var(--text-fade);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.implement-table td.icon-cell { width: 56px; }
+.implement-table td.icon-cell svg { width: 32px; height: 32px; vertical-align: middle; }
+.implement-table td.name { color: var(--text-primary); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; }
+.implement-table code {
+  background: rgba(255,255,255,0.04);
+  padding: 1px 6px; border-radius: 2px;
+  color: var(--neon-cyan);
+}
+
+/* ============================================================
+   Principles row
+   ============================================================ */
+.principles {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+}
+.principle {
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 22px 22px 20px;
+  position: relative;
+}
+.principle .n {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--text-fade); letter-spacing: 0.2em;
+}
+.principle h4 {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin: 6px 0 8px;
+  font-weight: 700;
+}
+.principle p { font-size: 13px; color: var(--text-dim); margin: 0; line-height: 1.55; }
+
+/* Footer note */
+.footer-note {
+  margin-top: 80px;
+  padding: 24px 28px;
+  background: linear-gradient(180deg, rgba(0,255,255,0.04), transparent);
+  border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 6px;
+  display: flex; align-items: center; gap: 18px;
+}
+.footer-note .badge {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  padding: 6px 10px;
+  background: rgba(0,255,255,0.08);
+  border: 1px solid rgba(0,255,255,0.25);
+  border-radius: 2px;
+}
+.footer-note p {
+  font-size: 13px; color: var(--text-dim); margin: 0; line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ====================================================
+       HEADER
+       ==================================================== -->
+  <div class="toplabel">VISUAL SPEC · UI ICONS + HUD</div>
+  <h1>HUD <span class="accent">//</span> ICONOGRAPHY</h1>
+  <p class="lede">A consistent icon set and HUD layout for the neon-cyberpunk run, designed to drop straight into Compose Canvas. Tokens lifted from <code style="font-family:var(--font-mono);color:var(--neon-cyan);background:rgba(0,255,255,0.06);padding:1px 6px;border-radius:2px;">GameTheme.kt</code>. Hand-off targets Claude Code or another implementing agent — every icon is a self-contained SVG below.</p>
+
+  <!-- ====================================================
+       PRINCIPLES
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">01</span> Principles</h2>
+      <span class="meta">Stylized 2D vector · Hades-lite + cyberpunk</span>
+    </div>
+    <div class="principles">
+      <div class="principle">
+        <div class="n">01</div>
+        <h4>Glyphic silhouette</h4>
+        <p>One bold shape per icon, readable at 22 px in the HUD bar. No internal anatomy details — read as a symbol, not a drawing.</p>
+      </div>
+      <div class="principle">
+        <div class="n">02</div>
+        <h4>One stroke weight</h4>
+        <p>Every icon uses a <b>2.5px stroke</b> in the 64-viewBox, scaled with the icon. Round caps. Solid fills only when needed for mass.</p>
+      </div>
+      <div class="principle">
+        <div class="n">03</div>
+        <h4>Owned accent</h4>
+        <p>Each icon carries <b>one</b> neon accent from the existing palette. Stat icons borrow their semantic color; weapons use cyan by default, switch to their elemental hue on level-up.</p>
+      </div>
+      <div class="principle">
+        <div class="n">04</div>
+        <h4>Subtle glow</h4>
+        <p>SVG drop-shadow filter, same hue as the stroke, 4px blur, 60% opacity. Replicated in Compose with <code style="font-family:var(--font-mono);color:var(--neon-cyan);background:rgba(0,255,255,0.06);padding:1px 4px;border-radius:2px;">Paint.setShadowLayer</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       PALETTE
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">02</span> Palette</h2>
+      <span class="meta">Source of truth · GameTheme.kt</span>
+    </div>
+    <div class="palette">
+      <div class="swatch" style="--c: #00FFFF;">
+        <div class="role">Primary</div>
+        <div><div class="name">Neon Cyan</div><div class="hex">#00FFFF</div></div>
+      </div>
+      <div class="swatch" style="--c: #B300FF;">
+        <div class="role">Secondary</div>
+        <div><div class="name">Neon Purple</div><div class="hex">#B300FF</div></div>
+      </div>
+      <div class="swatch" style="--c: #FF00AA;">
+        <div class="role">Accent</div>
+        <div><div class="name">Neon Pink</div><div class="hex">#FF00AA</div></div>
+      </div>
+      <div class="swatch" style="--c: #FF3333;">
+        <div class="role">Health</div>
+        <div><div class="name">Health Red</div><div class="hex">#FF3333</div></div>
+      </div>
+      <div class="swatch" style="--c: #33FF99;">
+        <div class="role">Stamina</div>
+        <div><div class="name">Stamina Grn</div><div class="hex">#33FF99</div></div>
+      </div>
+      <div class="swatch" style="--c: #FFCC00;">
+        <div class="role">XP / Crit</div>
+        <div><div class="name">XP Yellow</div><div class="hex">#FFCC00</div></div>
+      </div>
+      <div class="swatch" style="--c: #FFAA00;">
+        <div class="role">Rare loot</div>
+        <div><div class="name">Rarity Gold</div><div class="hex">#FFAA00</div></div>
+      </div>
+      <div class="swatch" style="--c: #0A0A0F;">
+        <div class="role">Surface</div>
+        <div><div class="name">BG Dark</div><div class="hex">#0A0A0F</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       STAT ICONS
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">03</span> Stat Icons</h2>
+      <span class="meta">10 icons · 32px–48px in HUD · 64 viewBox source</span>
+    </div>
+    <h3>For the pause-stats panel + level-up tooltips</h3>
+
+    <div class="icon-grid">
+      <!-- HEART / HP -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs><filter id="glowRed" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <g filter="url(#glowRed)">
+              <path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,51,51,0.08)"/>
+              <path d="M22 24 L28 30 L26 36" stroke="#FF3333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Health</div>
+        <div class="icon-sub">HP · Heart</div>
+        <div class="px">#FF3333</div>
+      </div>
+
+      <!-- STAMINA / LIGHTNING -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <defs><filter id="glowGreen" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <g filter="url(#glowGreen)">
+              <path d="M36 8 L18 34 L28 34 L24 56 L46 28 L34 28 L40 8 Z" stroke="#33FF99" stroke-width="2.5" stroke-linejoin="round" fill="rgba(51,255,153,0.10)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Stamina</div>
+        <div class="icon-sub">SP · Bolt</div>
+        <div class="px">#33FF99</div>
+      </div>
+
+      <!-- DAMAGE / SWORD -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <defs><filter id="glowCyan" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <g filter="url(#glowCyan)">
+              <path d="M32 6 L36 10 L36 42 L32 46 L28 42 L28 10 Z" stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(0,255,255,0.10)"/>
+              <line x1="20" y1="42" x2="44" y2="42" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="32" y1="42" x2="32" y2="56" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="32" cy="58" r="2.5" stroke="#00FFFF" stroke-width="2" fill="none"/>
+              <line x1="32" y1="14" x2="32" y2="36" stroke="#00FFFF" stroke-width="1" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Damage</div>
+        <div class="icon-sub">DMG · Sword</div>
+        <div class="px">#00FFFF</div>
+      </div>
+
+      <!-- ATTACK SPEED / RAPID SLASH -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowCyan)">
+              <!-- Diagonal blade (lower-left to upper-right) -->
+              <path d="M18 52 L46 24 L54 16 L50 26 L22 54 Z" stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(0,255,255,0.12)"/>
+              <!-- Hilt cross-guard -->
+              <line x1="14" y1="48" x2="24" y2="58" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Speed lines / afterimage strokes behind the blade -->
+              <path d="M10 38 Q20 32 30 32" stroke="#00FFFF" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.75"/>
+              <path d="M8 28 Q18 22 28 22" stroke="#00FFFF" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.5"/>
+              <path d="M10 18 Q20 14 28 14" stroke="#00FFFF" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.28"/>
+              <!-- Tip flash -->
+              <circle cx="52" cy="18" r="2" fill="#00FFFF"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Attack Speed</div>
+        <div class="icon-sub">ASPD · Rapid slash</div>
+        <div class="px">#00FFFF</div>
+      </div>
+
+      <!-- MOVE SPEED / BOOT -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowGreen)">
+              <path d="M14 38 L14 16 L26 16 L26 28 L42 28 L50 38 L50 48 L14 48 Z" stroke="#33FF99" stroke-width="2.5" stroke-linejoin="round" fill="rgba(51,255,153,0.08)"/>
+              <line x1="18" y1="48" x2="18" y2="54" stroke="#33FF99" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="30" y1="48" x2="30" y2="54" stroke="#33FF99" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="42" y1="48" x2="42" y2="54" stroke="#33FF99" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="56" y1="22" x2="60" y2="22" stroke="#33FF99" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+              <line x1="54" y1="30" x2="60" y2="30" stroke="#33FF99" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Move Speed</div>
+        <div class="icon-sub">MS · Boot</div>
+        <div class="px">#33FF99</div>
+      </div>
+
+      <!-- PICKUP / MAGNET -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowCyan)">
+              <path d="M16 14 L16 36 Q16 50 32 50 Q48 50 48 36 L48 14 L40 14 L40 36 Q40 42 32 42 Q24 42 24 36 L24 14 Z"
+                    stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(0,255,255,0.06)"/>
+              <rect x="16" y="14" width="8" height="8" fill="#FF3333" stroke="#FF3333" stroke-width="2"/>
+              <rect x="40" y="14" width="8" height="8" fill="#00FFFF" stroke="#00FFFF" stroke-width="2"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Pickup Range</div>
+        <div class="icon-sub">PKP · Magnet</div>
+        <div class="px">#00FFFF</div>
+      </div>
+
+      <!-- CRIT CHANCE / TARGET -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <defs><filter id="glowYellow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <g filter="url(#glowYellow)">
+              <circle cx="32" cy="32" r="20" stroke="#FFCC00" stroke-width="2.5" fill="none"/>
+              <circle cx="32" cy="32" r="12" stroke="#FFCC00" stroke-width="2" fill="none" opacity="0.7"/>
+              <circle cx="32" cy="32" r="4" fill="#FFCC00"/>
+              <line x1="32" y1="6" x2="32" y2="14" stroke="#FFCC00" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="32" y1="50" x2="32" y2="58" stroke="#FFCC00" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="6" y1="32" x2="14" y2="32" stroke="#FFCC00" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="50" y1="32" x2="58" y2="32" stroke="#FFCC00" stroke-width="2.5" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Crit Chance</div>
+        <div class="icon-sub">CRIT% · Target</div>
+        <div class="px">#FFCC00</div>
+      </div>
+
+      <!-- CRIT DAMAGE / STAR -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowYellow)">
+              <path d="M32 6 L36 26 L56 32 L36 38 L32 58 L28 38 L8 32 L28 26 Z"
+                    stroke="#FFCC00" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,204,0,0.12)"/>
+              <circle cx="32" cy="32" r="3" fill="#FFCC00"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Crit Damage</div>
+        <div class="icon-sub">CDMG · Star</div>
+        <div class="px">#FFCC00</div>
+      </div>
+
+      <!-- XP BONUS / CRYSTAL -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <defs><filter id="glowPurple" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <g filter="url(#glowPurple)">
+              <path d="M32 6 L48 22 L40 56 L24 56 L16 22 Z"
+                    stroke="#B300FF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(179,0,255,0.15)"/>
+              <line x1="16" y1="22" x2="48" y2="22" stroke="#B300FF" stroke-width="2" opacity="0.8"/>
+              <line x1="32" y1="6" x2="32" y2="56" stroke="#B300FF" stroke-width="1.5" opacity="0.5"/>
+              <line x1="24" y1="22" x2="32" y2="6" stroke="#B300FF" stroke-width="1.5" opacity="0.5"/>
+              <line x1="40" y1="22" x2="32" y2="6" stroke="#B300FF" stroke-width="1.5" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">XP Bonus</div>
+        <div class="icon-sub">XP% · Crystal</div>
+        <div class="px">#B300FF</div>
+      </div>
+
+      <!-- DODGE / DASH AFTERIMAGE -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowCyan)">
+              <!-- Three stacked chevrons fading backward = forward dash -->
+              <path d="M10 16 L24 32 L10 48" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.25"/>
+              <path d="M22 16 L36 32 L22 48" stroke="#00FFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.55"/>
+              <path d="M34 12 L52 32 L34 52" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="rgba(0,255,255,0.10)"/>
+              <!-- Tail wisps -->
+              <line x1="4" y1="32" x2="10" y2="32" stroke="#00FFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Dodge</div>
+        <div class="icon-sub">DDG · Dash · Evasion</div>
+        <div class="px">#00FFFF</div>
+      </div>
+    </div>
+
+    <!-- Size verification row -->
+    <div class="sizes">
+      <span class="label">Read at any size</span>
+      <div class="col">
+        <svg width="16" height="16" viewBox="0 0 64 64" fill="none">
+          <path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="3" stroke-linejoin="round" fill="rgba(255,51,51,0.1)"/>
+        </svg>
+        <div class="px-label">16PX</div>
+      </div>
+      <div class="col">
+        <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
+          <path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="2.8" stroke-linejoin="round" fill="rgba(255,51,51,0.1)"/>
+        </svg>
+        <div class="px-label">24PX</div>
+      </div>
+      <div class="col">
+        <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
+          <path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,51,51,0.1)"/>
+        </svg>
+        <div class="px-label">32PX</div>
+      </div>
+      <div class="col">
+        <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+          <path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,51,51,0.1)"/>
+        </svg>
+        <div class="px-label">48PX</div>
+      </div>
+      <div class="col">
+        <svg width="72" height="72" viewBox="0 0 64 64" fill="none">
+          <path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,51,51,0.1)"/>
+        </svg>
+        <div class="px-label">72PX</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       WEAPON ICONS
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">04</span> Weapon Icons</h2>
+      <span class="meta">8 weapons · matches WeaponType enum</span>
+    </div>
+    <h3>Used in HUD weapon slots (46px) + upgrade cards (64px)</h3>
+
+    <div class="icon-grid weapons">
+
+      <!-- PROTOCOL: HOLLOW (greatsword) -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowCyan)">
+              <!-- Greatsword vertical -->
+              <path d="M32 4 L37 8 L37 44 L32 50 L27 44 L27 8 Z" stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(0,255,255,0.1)"/>
+              <line x1="16" y1="44" x2="48" y2="44" stroke="#00FFFF" stroke-width="3" stroke-linecap="round"/>
+              <rect x="29" y="44" width="6" height="14" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.15)"/>
+              <line x1="32" y1="10" x2="32" y2="40" stroke="#00FFFF" stroke-width="1" opacity="0.6"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Protocol: Hollow</div>
+        <div class="icon-sub">GREATSWORD · Melee arc</div>
+        <div class="px">CYAN</div>
+      </div>
+
+      <!-- NEEDLE.DLL -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowCyan)">
+              <!-- Thin needle/syringe -->
+              <line x1="10" y1="54" x2="44" y2="20" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round"/>
+              <rect x="40" y="14" width="14" height="10" transform="rotate(-45 47 19)" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.15)"/>
+              <line x1="8" y1="56" x2="14" y2="50" stroke="#00FFFF" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="22" cy="42" r="1.5" fill="#00FFFF"/>
+              <circle cx="30" cy="34" r="1.5" fill="#00FFFF"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Needle.dll</div>
+        <div class="icon-sub">DAGGER · Thrust</div>
+        <div class="px">CYAN</div>
+      </div>
+
+      <!-- GHOST BEAM (laser) -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowPurple)">
+              <!-- Emitter -->
+              <rect x="6" y="26" width="16" height="12" stroke="#B300FF" stroke-width="2.5" fill="rgba(179,0,255,0.15)"/>
+              <line x1="22" y1="32" x2="56" y2="32" stroke="#B300FF" stroke-width="3" stroke-linecap="round"/>
+              <line x1="22" y1="32" x2="52" y2="32" stroke="#FF00AA" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+              <!-- Burst at end -->
+              <path d="M52 26 L60 32 L52 38 Z" stroke="#B300FF" stroke-width="2" stroke-linejoin="round" fill="rgba(179,0,255,0.3)"/>
+              <line x1="10" y1="22" x2="10" y2="18" stroke="#B300FF" stroke-width="2" stroke-linecap="round"/>
+              <line x1="18" y1="22" x2="18" y2="18" stroke="#B300FF" stroke-width="2" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Ghost Beam</div>
+        <div class="icon-sub">LASER · Continuous</div>
+        <div class="px">PURPLE</div>
+      </div>
+
+      <!-- ECHO WALL (force field) -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowCyan)">
+              <!-- Concentric pulse rings -->
+              <circle cx="32" cy="32" r="6" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.25)"/>
+              <circle cx="32" cy="32" r="14" stroke="#00FFFF" stroke-width="2" fill="none" opacity="0.7" stroke-dasharray="3 2"/>
+              <circle cx="32" cy="32" r="22" stroke="#00FFFF" stroke-width="2" fill="none" opacity="0.45" stroke-dasharray="3 2"/>
+              <circle cx="32" cy="32" r="28" stroke="#00FFFF" stroke-width="1.5" fill="none" opacity="0.25"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Echo Wall</div>
+        <div class="icon-sub">FORCE FIELD · Pulse</div>
+        <div class="px">CYAN</div>
+      </div>
+
+      <!-- PLAGUE.EXE (virus strike) -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <defs><filter id="glowPink" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <g filter="url(#glowPink)">
+              <!-- Hexagon -->
+              <path d="M32 6 L52 18 L52 42 L32 54 L12 42 L12 18 Z" stroke="#FF00AA" stroke-width="2.5" stroke-linejoin="round" fill="rgba(255,0,170,0.10)"/>
+              <!-- Inner hex -->
+              <path d="M32 18 L44 25 L44 37 L32 44 L20 37 L20 25 Z" stroke="#FF00AA" stroke-width="1.5" fill="none" opacity="0.6"/>
+              <!-- Virus dots -->
+              <circle cx="32" cy="14" r="1.8" fill="#FF00AA"/>
+              <circle cx="48" cy="22" r="1.8" fill="#FF00AA"/>
+              <circle cx="48" cy="40" r="1.8" fill="#FF00AA"/>
+              <circle cx="32" cy="48" r="1.8" fill="#FF00AA"/>
+              <circle cx="16" cy="40" r="1.8" fill="#FF00AA"/>
+              <circle cx="16" cy="22" r="1.8" fill="#FF00AA"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Plague.exe</div>
+        <div class="icon-sub">VIRUS · Hex blast</div>
+        <div class="px">PINK</div>
+      </div>
+
+      <!-- STACK OVERFLOW (digital necrosis) -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowGreen)">
+              <!-- Stacked blocks -->
+              <rect x="14" y="42" width="36" height="10" stroke="#33FF99" stroke-width="2.5" fill="rgba(51,255,153,0.10)"/>
+              <rect x="16" y="30" width="32" height="10" stroke="#33FF99" stroke-width="2.5" fill="rgba(51,255,153,0.15)"/>
+              <rect x="20" y="18" width="24" height="10" stroke="#33FF99" stroke-width="2.5" fill="rgba(51,255,153,0.20)"/>
+              <path d="M24 14 L32 6 L40 14" stroke="#33FF99" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="32" y1="8" x2="32" y2="16" stroke="#33FF99" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="20" cy="47" r="1.5" fill="#33FF99"/>
+              <circle cx="22" cy="35" r="1.5" fill="#33FF99"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Stack Overflow</div>
+        <div class="icon-sub">NECROSIS · Stacks</div>
+        <div class="px">GREEN</div>
+      </div>
+
+      <!-- BLOOD.HEX (chain lightning) -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <defs><filter id="glowPinkB" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <g filter="url(#glowPinkB)">
+              <!-- Chain lightning bolt path through nodes -->
+              <circle cx="12" cy="20" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.3)"/>
+              <circle cx="32" cy="14" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.3)"/>
+              <circle cx="50" cy="32" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.3)"/>
+              <circle cx="28" cy="48" r="3" stroke="#FF00AA" stroke-width="2" fill="rgba(255,0,170,0.3)"/>
+              <!-- Jagged connecting lightning -->
+              <path d="M14 20 L20 16 L24 22 L30 14 M35 14 L42 22 L46 18 L50 30 M48 33 L40 40 L34 36 L30 46" stroke="#FF00AA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Blood.hex</div>
+        <div class="icon-sub">CHAIN · Lightning</div>
+        <div class="px">PINK</div>
+      </div>
+
+      <!-- PHANTOM DAGGER (throwing) -->
+      <div class="icon-card">
+        <div class="icon-stage">
+          <svg viewBox="0 0 64 64" fill="none">
+            <g filter="url(#glowCyan)">
+              <!-- Angled dagger with trail -->
+              <path d="M10 54 L8 56 L18 50 L46 22 L52 12 L42 18 L14 46 L8 56 Z" stroke="#00FFFF" stroke-width="2.5" stroke-linejoin="round" fill="rgba(0,255,255,0.10)"/>
+              <!-- Trail particles -->
+              <circle cx="22" cy="50" r="1.5" fill="#00FFFF" opacity="0.7"/>
+              <circle cx="16" cy="56" r="1.2" fill="#00FFFF" opacity="0.5"/>
+              <circle cx="28" cy="48" r="1" fill="#00FFFF" opacity="0.4"/>
+              <line x1="48" y1="14" x2="44" y2="18" stroke="#00FFFF" stroke-width="1" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Phantom Dagger</div>
+        <div class="icon-sub">PROJECTILE · Thrown</div>
+        <div class="px">CYAN</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       PICKUP ICONS
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">05</span> Pickup Visuals</h2>
+      <span class="meta">Drawn in world-space · Canvas-native</span>
+    </div>
+    <h3>XP orbs &amp; souls drop from enemies — these are world objects, not HUD</h3>
+
+    <div class="icon-grid pickups">
+
+      <!-- XP ORB -->
+      <div class="icon-card">
+        <div class="icon-stage" style="height:140px;">
+          <svg viewBox="0 0 64 64" width="80" height="80" fill="none">
+            <defs>
+              <radialGradient id="orbHalo" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFCC00" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#FFCC00" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="orbFace" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFEE88"/>
+                <stop offset="100%" stop-color="#FFAA00"/>
+              </linearGradient>
+            </defs>
+            <circle cx="32" cy="32" r="30" fill="url(#orbHalo)"/>
+            <g filter="url(#glowYellow)">
+              <path d="M32 12 L48 26 L44 50 L20 50 L16 26 Z" stroke="#FFCC00" stroke-width="2.5" stroke-linejoin="round" fill="url(#orbFace)"/>
+              <path d="M16 26 L48 26" stroke="#FFEE88" stroke-width="1.5"/>
+              <path d="M32 12 L32 50" stroke="#FFAA00" stroke-width="1" opacity="0.6"/>
+              <path d="M22 18 L28 22" stroke="#FFFFFF" stroke-width="1" opacity="0.7"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">XP Orb</div>
+        <div class="icon-sub">Pulses 2 Hz · Slow Y-spin · 12px radius</div>
+        <div class="px" style="position:static;text-align:right;margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;color:var(--text-fade);font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;">
+            <span>FACE #FFCC00 → #FFAA00</span>
+            <span>HALO α=0.4 · BLUR 8</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOUL -->
+      <div class="icon-card">
+        <div class="icon-stage" style="height:140px;">
+          <svg viewBox="0 0 64 64" width="80" height="80" fill="none">
+            <defs>
+              <radialGradient id="soulHalo" cx="50%" cy="60%" r="50%">
+                <stop offset="0%" stop-color="#B300FF" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#B300FF" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="soulFlame" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stop-color="#00FFFF"/>
+                <stop offset="60%" stop-color="#B300FF"/>
+                <stop offset="100%" stop-color="#FF00AA"/>
+              </linearGradient>
+            </defs>
+            <circle cx="32" cy="38" r="28" fill="url(#soulHalo)"/>
+            <g filter="url(#glowPurple)">
+              <!-- Soul flame shape: pointed top, rounded bottom, wisps -->
+              <path d="M32 8 Q26 18 24 28 Q20 36 22 44 Q24 54 32 56 Q40 54 42 44 Q44 36 40 28 Q38 18 32 8 Z"
+                    stroke="#B300FF" stroke-width="2.5" stroke-linejoin="round" fill="url(#soulFlame)"/>
+              <!-- Inner highlight -->
+              <path d="M30 22 Q26 30 26 40 Q28 46 32 48" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.5"/>
+              <!-- Floating ember sparks -->
+              <circle cx="20" cy="20" r="1.2" fill="#FF00AA" opacity="0.8"/>
+              <circle cx="44" cy="14" r="1.2" fill="#00FFFF" opacity="0.8"/>
+              <circle cx="48" cy="34" r="1" fill="#B300FF" opacity="0.6"/>
+            </g>
+          </svg>
+        </div>
+        <div class="icon-name">Soul</div>
+        <div class="icon-sub">Drifts upward · Wisps shed · 14px radius</div>
+        <div class="px" style="position:static;text-align:right;margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;color:var(--text-fade);font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;">
+            <span>FLAME CYAN→PURPLE→PINK</span>
+            <span>HALO α=0.4 · BLUR 10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       HUD LAYOUT MOCKUP
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">06</span> HUD Layout</h2>
+      <span class="meta">Android landscape · 2400×1080 ref @ 0.52 scale</span>
+    </div>
+    <h3>Everything tagged below already exists in <code style="font-family:var(--font-mono);color:var(--neon-cyan);background:rgba(0,255,255,0.06);padding:1px 6px;border-radius:2px;">HudOverlay</code> — only the visuals change</h3>
+
+    <div class="hud-frame-shell">
+      <div class="hud-frame">
+
+        <!-- Backdrop gameplay hints -->
+        <div class="entity player-hint"></div>
+        <div class="entity enemy-hint a"></div>
+        <div class="entity enemy-hint b"></div>
+        <div class="entity enemy-hint c"></div>
+        <div class="entity enemy-hint d"></div>
+
+        <!-- Floating damage numbers -->
+        <div class="dmg-sample crit">347!</div>
+        <div class="dmg-sample normal">42</div>
+        <div class="dmg-sample player-hit">-18</div>
+
+        <!-- Top-left: stat bars + weapon slots -->
+        <div class="hud-tl">
+          <!-- Health -->
+          <div class="bar-row">
+            <span class="bar-icon">
+              <svg viewBox="0 0 64 64" fill="none"><path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="3" stroke-linejoin="round" fill="rgba(255,51,51,0.18)"/></svg>
+            </span>
+            <div class="bar" style="--g: linear-gradient(90deg,#B300FF,#FF3333); --shadow: rgba(255,51,51,0.4);">
+              <div class="fill" style="width:72%"></div>
+              <div class="ticks"></div>
+            </div>
+            <span class="bar-label">72/100</span>
+          </div>
+          <!-- Stamina -->
+          <div class="bar-row">
+            <span class="bar-icon">
+              <svg viewBox="0 0 64 64" fill="none"><path d="M36 8 L18 34 L28 34 L24 56 L46 28 L34 28 L40 8 Z" stroke="#33FF99" stroke-width="3" stroke-linejoin="round" fill="rgba(51,255,153,0.18)"/></svg>
+            </span>
+            <div class="bar" style="--g: linear-gradient(90deg,#33FF99,#00FFFF); --shadow: rgba(51,255,153,0.4);">
+              <div class="fill" style="width:48%"></div>
+              <div class="ticks"></div>
+            </div>
+            <span class="bar-label">48/100</span>
+          </div>
+          <!-- XP -->
+          <div class="bar-row">
+            <span class="bar-icon">
+              <svg viewBox="0 0 64 64" fill="none"><path d="M32 6 L48 22 L40 56 L24 56 L16 22 Z" stroke="#B300FF" stroke-width="3" stroke-linejoin="round" fill="rgba(179,0,255,0.25)"/></svg>
+            </span>
+            <div class="bar" style="--g: linear-gradient(90deg,#FFCC00,#FF9900); --shadow: rgba(255,204,0,0.4); height: 6px;">
+              <div class="fill" style="width:34%"></div>
+            </div>
+            <span class="bar-label" style="color:var(--xp-yellow);">LV 7</span>
+          </div>
+
+          <!-- Weapon slots -->
+          <div class="weapon-row">
+            <div class="wpn-slot">
+              <svg viewBox="0 0 64 64" fill="none">
+                <path d="M32 4 L37 8 L37 44 L32 50 L27 44 L27 8 Z" stroke="#00FFFF" stroke-width="3" stroke-linejoin="round" fill="rgba(0,255,255,0.15)"/>
+                <line x1="16" y1="44" x2="48" y2="44" stroke="#00FFFF" stroke-width="3" stroke-linecap="round"/>
+                <rect x="29" y="44" width="6" height="14" stroke="#00FFFF" stroke-width="2.5" fill="rgba(0,255,255,0.2)"/>
+              </svg>
+              <span class="lv">L4</span>
+            </div>
+            <div class="wpn-slot">
+              <svg viewBox="0 0 64 64" fill="none">
+                <circle cx="12" cy="20" r="3" stroke="#FF00AA" stroke-width="2.5" fill="rgba(255,0,170,0.3)"/>
+                <circle cx="32" cy="14" r="3" stroke="#FF00AA" stroke-width="2.5" fill="rgba(255,0,170,0.3)"/>
+                <circle cx="50" cy="32" r="3" stroke="#FF00AA" stroke-width="2.5" fill="rgba(255,0,170,0.3)"/>
+                <path d="M14 20 L20 16 L24 22 L30 14 M35 14 L42 22 L46 18 L50 30" stroke="#FF00AA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              <span class="lv">L2</span>
+            </div>
+            <div class="wpn-slot empty">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="6" x2="12" y2="18" stroke="#8A8AA8" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="12" x2="18" y2="12" stroke="#8A8AA8" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top-right -->
+        <div class="hud-tr">
+          <div class="wave-display">
+            <span class="lbl">Wave</span>
+            <span class="num">07</span>
+            <span class="sep">/</span>
+            <span class="total">12</span>
+          </div>
+          <div class="biome-name">CORRUPTED TEMPLE</div>
+          <div class="timer">02:34</div>
+
+          <!-- Upgrade slots -->
+          <div class="upgrade-slots-row">
+            <div class="up-slot gold">
+              <svg viewBox="0 0 64 64"><path d="M32 6 L36 26 L56 32 L36 38 L32 58 L28 38 L8 32 L28 26 Z" stroke="#FFCC00" stroke-width="3" stroke-linejoin="round" fill="rgba(255,204,0,0.3)"/></svg>
+            </div>
+            <div class="up-slot purple">
+              <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" stroke="#B300FF" stroke-width="3" fill="rgba(179,0,255,0.25)"/></svg>
+            </div>
+            <div class="up-slot cyan">
+              <svg viewBox="0 0 64 64"><path d="M22 16 L36 32 L22 48 M34 12 L52 32 L34 52" stroke="#00FFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </div>
+            <div class="up-slot cyan">
+              <svg viewBox="0 0 64 64"><path d="M16 14 L16 36 Q16 50 32 50 Q48 50 48 36 L48 14 L40 14 L40 36 Q40 42 32 42 Q24 42 24 36 L24 14 Z" stroke="#00FFFF" stroke-width="3" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="up-slot purple">
+              <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" stroke="#B300FF" stroke-width="3" fill="none"/><circle cx="32" cy="32" r="6" fill="#B300FF"/></svg>
+            </div>
+            <div class="up-slot empty"></div>
+            <div class="up-slot empty"></div>
+            <div class="up-slot empty"></div>
+          </div>
+        </div>
+
+        <!-- Bottom-left joystick -->
+        <div class="hud-bl"><div class="joystick"></div></div>
+
+        <!-- Bottom-right dodge button -->
+        <div class="hud-br">
+          <div class="dodge-btn">
+            <svg viewBox="0 0 64 64" fill="none">
+              <path d="M10 16 L24 32 L10 48" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.3"/>
+              <path d="M22 16 L36 32 L22 48" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+              <path d="M34 12 L52 32 L34 52" stroke="#00FFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(0,255,255,0.18)"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="label">HUD reference · landscape</div>
+
+        <!-- Annotations -->
+        <!-- Callout 1: stat bars -->
+        <div class="cal-dot" style="left:140px; top:80px;"></div>
+        <div class="callout" style="left:380px; top:54px;">A · Stat bars <span class="sub">22px icon + 10px bar + numeric label</span></div>
+        <div class="cal-line" style="left:152px; top:80px; width:226px; height:1px;"></div>
+
+        <!-- Callout 2: weapon slots -->
+        <div class="cal-dot" style="left:128px; top:200px;"></div>
+        <div class="callout" style="left:380px; top:188px;">B · Weapon slots <span class="sub">46px square · level tag</span></div>
+        <div class="cal-line" style="left:140px; top:200px; width:238px; height:1px;"></div>
+
+        <!-- Callout 3: wave display -->
+        <div class="cal-dot" style="right:200px; top:48px;"></div>
+        <div class="callout" style="right:280px; top:140px;">C · Wave + biome <span class="sub">Mono · cyan glow</span></div>
+        <div class="cal-line" style="right:212px; top:60px; width:1px; height:80px;"></div>
+
+        <!-- Callout 4: upgrade slots -->
+        <div class="cal-dot" style="right:200px; top:170px;"></div>
+        <div class="callout" style="right:340px; top:230px;">D · Upgrade slots <span class="sub">Rarity-tinted border</span></div>
+        <div class="cal-line" style="right:212px; top:182px; width:1px; height:50px;"></div>
+
+        <!-- Callout 5: dodge -->
+        <div class="cal-dot" style="right:80px; bottom:80px;"></div>
+        <div class="callout" style="right:200px; bottom:170px;">E · Dodge <span class="sub">90px circle · pulse on ready</span></div>
+        <div class="cal-line" style="right:92px; bottom:88px; width:1px; height:80px;"></div>
+
+        <!-- Callout 6: damage numbers -->
+        <div class="cal-dot" style="left:33%; top:40%;"></div>
+        <div class="callout" style="left:36%; top:24%;">F · Damage popups <span class="sub">crit = yellow + 28px · regular = white 18px</span></div>
+        <div class="cal-line" style="left:34%; top:36%; width:1px; height:30px;"></div>
+
+      </div>
+    </div>
+
+    <!-- HUD spec table -->
+    <div class="spec-grid" style="margin-top:32px;">
+      <div class="spec-block">
+        <h4>Spatial budget</h4>
+        <ul>
+          <li><b>Top bar height:</b> 96 dp</li>
+          <li><b>Bottom controls:</b> 140 dp safe-zone</li>
+          <li><b>Center play area:</b> always &gt;= 720 dp tall on smallest landscape device</li>
+          <li><b>Stat bar width:</b> 320 dp (fixed) so it doesn't compete with gameplay</li>
+          <li><b>Damage numbers:</b> world-space, scale 1.0 normal / 1.6 crit · TTL 0.8s</li>
+        </ul>
+      </div>
+      <div class="spec-block">
+        <h4>Z-order</h4>
+        <ul>
+          <li>0 — Biome backdrop image (untouched)</li>
+          <li>1 — Pickup radius rings, chain lightning radius</li>
+          <li>2 — Particles, XP orbs, projectiles</li>
+          <li>3 — Attack zones, enemies, player, attack visuals</li>
+          <li>4 — Damage numbers, off-screen indicators</li>
+          <li>5 — <b>HUD overlay (all icons live here)</b></li>
+          <li>6 — Pause modal / upgrade picker</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       IMPLEMENTATION SPEC
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">07</span> Implementation Spec</h2>
+      <span class="meta">For Claude Code · Kotlin + Compose Canvas</span>
+    </div>
+
+    <div class="spec-grid">
+      <div class="spec-block">
+        <h4>File plan</h4>
+        <ul>
+          <li><b>New —</b> <code>ui/components/Icons.kt</code> — single object holding all path data + a <code>drawIcon(icon, size, color)</code> helper using Compose <code>Path</code>.</li>
+          <li><b>New —</b> <code>res/drawable/</code> — same icons as XML vectors (so they work in non-Canvas contexts: upgrade cards, settings).</li>
+          <li><b>Modify —</b> <code>GameScreen.kt</code> — swap the existing emoji/text icon stubs in <code>HealthBar</code>, <code>StaminaBar</code>, <code>XpBar</code>, <code>WeaponSlotsRow</code> for <code>Icons.draw…</code> calls. <b>No changes to bar widths, ranges, or values.</b></li>
+          <li><b>Modify —</b> <code>UpgradeScreen.kt</code> — read the weapon's <code>WeaponType</code> and render its icon on the card.</li>
+          <li><b>Untouched —</b> Enemy.kt, Player.kt, Weapon.kt, GameLoop.kt, CollisionDetector.kt, PlayerStats.kt. <b>Zero gameplay edits.</b></li>
+        </ul>
+      </div>
+      <div class="spec-block">
+        <h4>Path-to-Compose translation</h4>
+        <ul>
+          <li>SVG viewBox is always <code>0 0 64 64</code>. Translate by scaling: <code>val s = size / 64f</code>, then multiply every coordinate.</li>
+          <li>Strokes use <code>Stroke(width = 2.5f * s, cap = StrokeCap.Round, join = StrokeJoin.Round)</code>.</li>
+          <li>For the neon glow: <code>drawIntoCanvas { canvas -&gt; canvas.nativeCanvas.drawPath(p, Paint().apply { setShadowLayer(8f, 0f, 0f, glowColor.toArgb()); strokeWidth = …; style = Paint.Style.STROKE }) }</code>.</li>
+          <li>Fill alpha is always 0.10–0.15 of the stroke color — keeps icons readable on bright biomes.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <div class="spec-block">
+        <h4>Icon → identifier map</h4>
+        <table class="implement-table">
+          <thead>
+            <tr><th></th><th>Icon</th><th>ID (Kotlin)</th><th>Used in</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M32 52 L14 32 Q8 24 14 18 Q22 12 32 22 Q42 12 50 18 Q56 24 50 32 Z" stroke="#FF3333" stroke-width="3" stroke-linejoin="round" fill="rgba(255,51,51,0.15)"/></svg></td>
+              <td class="name">Health</td><td><code>Icons.Heart</code></td><td>HealthBar, PauseStatsPanel</td><td>state.playerHp</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M36 8 L18 34 L28 34 L24 56 L46 28 L34 28 L40 8 Z" stroke="#33FF99" stroke-width="3" stroke-linejoin="round" fill="rgba(51,255,153,0.15)"/></svg></td>
+              <td class="name">Stamina</td><td><code>Icons.Bolt</code></td><td>StaminaBar</td><td>state.playerStamina</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M32 6 L36 10 L36 42 L32 46 L28 42 L28 10 Z M20 42 L44 42 M32 42 L32 56" stroke="#00FFFF" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="rgba(0,255,255,0.15)"/></svg></td>
+              <td class="name">Damage</td><td><code>Icons.Sword</code></td><td>PauseStatsPanel, Upgrade tooltips</td><td>s.bonusDamagePercent</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M18 52 L46 24 L54 16 L50 26 L22 54 Z" stroke="#00FFFF" stroke-width="3" stroke-linejoin="round" fill="rgba(0,255,255,0.15)"/><path d="M10 38 Q20 32 30 32 M8 28 Q18 22 28 22" stroke="#00FFFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg></td>
+              <td class="name">Attack Speed</td><td><code>Icons.RapidSlash</code></td><td>PauseStatsPanel</td><td>s.bonusAttackSpeedPercent</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M14 38 L14 16 L26 16 L26 28 L42 28 L50 38 L50 48 L14 48 Z" stroke="#33FF99" stroke-width="3" stroke-linejoin="round" fill="rgba(51,255,153,0.10)"/></svg></td>
+              <td class="name">Move Speed</td><td><code>Icons.Boot</code></td><td>PauseStatsPanel</td><td>s.moveSpeed</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M16 14 L16 36 Q16 50 32 50 Q48 50 48 36 L48 14 L40 14 L40 36 Q40 42 32 42 Q24 42 24 36 L24 14 Z" stroke="#00FFFF" stroke-width="3" stroke-linejoin="round" fill="rgba(0,255,255,0.10)"/></svg></td>
+              <td class="name">Pickup Range</td><td><code>Icons.Magnet</code></td><td>PauseStatsPanel</td><td>s.pickupRadius</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="20" stroke="#FFCC00" stroke-width="3" fill="none"/><circle cx="32" cy="32" r="12" stroke="#FFCC00" stroke-width="2.5" fill="none" opacity="0.7"/><circle cx="32" cy="32" r="4" fill="#FFCC00"/></svg></td>
+              <td class="name">Crit Chance</td><td><code>Icons.Target</code></td><td>PauseStatsPanel</td><td>s.critChancePercent</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M32 6 L36 26 L56 32 L36 38 L32 58 L28 38 L8 32 L28 26 Z" stroke="#FFCC00" stroke-width="3" stroke-linejoin="round" fill="rgba(255,204,0,0.18)"/></svg></td>
+              <td class="name">Crit Damage</td><td><code>Icons.Star</code></td><td>PauseStatsPanel</td><td>s.critDamagePercent</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M32 6 L48 22 L40 56 L24 56 L16 22 Z" stroke="#B300FF" stroke-width="3" stroke-linejoin="round" fill="rgba(179,0,255,0.20)"/></svg></td>
+              <td class="name">XP Bonus</td><td><code>Icons.Crystal</code></td><td>PauseStatsPanel, XpBar</td><td>s.bonusXpPercent</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M10 16 L24 32 L10 48" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.3"/><path d="M22 16 L36 32 L22 48" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/><path d="M34 12 L52 32 L34 52" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="rgba(0,255,255,0.15)"/></svg></td>
+              <td class="name">Dodge</td><td><code>Icons.Dash</code></td><td>PauseStatsPanel, DodgeButton</td><td>s.dodgeChancePercent</td>
+            </tr>
+            <tr style="background:rgba(0,255,255,0.02);"><td colspan="5" style="padding:8px 12px;font-size:9px;color:var(--text-fade);letter-spacing:0.2em;">— WEAPONS —</td></tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M32 4 L37 8 L37 44 L32 50 L27 44 L27 8 Z M16 44 L48 44 M29 44 L29 58 L35 58 L35 44" stroke="#00FFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="rgba(0,255,255,0.15)"/></svg></td>
+              <td class="name">Greatsword</td><td><code>Icons.Wpn.Greatsword</code></td><td>WeaponSlot, UpgradeCard</td><td>WeaponType.PROTOCOL_HOLLOW</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><line x1="10" y1="54" x2="44" y2="20" stroke="#00FFFF" stroke-width="3" stroke-linecap="round"/><rect x="40" y="14" width="14" height="10" transform="rotate(-45 47 19)" stroke="#00FFFF" stroke-width="3" fill="rgba(0,255,255,0.2)"/></svg></td>
+              <td class="name">Needle</td><td><code>Icons.Wpn.Needle</code></td><td>WeaponSlot</td><td>WeaponType.NEEDLE_DLL</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><rect x="6" y="26" width="16" height="12" stroke="#B300FF" stroke-width="3" fill="rgba(179,0,255,0.2)"/><line x1="22" y1="32" x2="56" y2="32" stroke="#B300FF" stroke-width="3" stroke-linecap="round"/></svg></td>
+              <td class="name">Ghost Beam</td><td><code>Icons.Wpn.Beam</code></td><td>WeaponSlot</td><td>WeaponType.GHOST_BEAM</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="6" stroke="#00FFFF" stroke-width="3" fill="rgba(0,255,255,0.3)"/><circle cx="32" cy="32" r="14" stroke="#00FFFF" stroke-width="2.5" fill="none" opacity="0.7" stroke-dasharray="3 2"/><circle cx="32" cy="32" r="22" stroke="#00FFFF" stroke-width="2.5" fill="none" opacity="0.45" stroke-dasharray="3 2"/></svg></td>
+              <td class="name">Echo Wall</td><td><code>Icons.Wpn.Pulse</code></td><td>WeaponSlot</td><td>WeaponType.ECHO_WALL</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M32 6 L52 18 L52 42 L32 54 L12 42 L12 18 Z" stroke="#FF00AA" stroke-width="3" stroke-linejoin="round" fill="rgba(255,0,170,0.15)"/><circle cx="32" cy="32" r="3" fill="#FF00AA"/></svg></td>
+              <td class="name">Plague</td><td><code>Icons.Wpn.Hex</code></td><td>WeaponSlot</td><td>WeaponType.PLAGUE_EXE</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><rect x="14" y="42" width="36" height="10" stroke="#33FF99" stroke-width="3" fill="rgba(51,255,153,0.15)"/><rect x="16" y="30" width="32" height="10" stroke="#33FF99" stroke-width="3" fill="rgba(51,255,153,0.20)"/><rect x="20" y="18" width="24" height="10" stroke="#33FF99" stroke-width="3" fill="rgba(51,255,153,0.25)"/></svg></td>
+              <td class="name">Stack Overflow</td><td><code>Icons.Wpn.Stack</code></td><td>WeaponSlot</td><td>WeaponType.STACK_OVERFLOW</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><circle cx="12" cy="20" r="3" stroke="#FF00AA" stroke-width="2.5" fill="rgba(255,0,170,0.3)"/><circle cx="32" cy="14" r="3" stroke="#FF00AA" stroke-width="2.5" fill="rgba(255,0,170,0.3)"/><circle cx="50" cy="32" r="3" stroke="#FF00AA" stroke-width="2.5" fill="rgba(255,0,170,0.3)"/><path d="M14 20 L20 16 L24 22 L30 14 M35 14 L42 22 L46 18 L50 30" stroke="#FF00AA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></td>
+              <td class="name">Blood Hex</td><td><code>Icons.Wpn.Chain</code></td><td>WeaponSlot</td><td>WeaponType.BLOOD_HEX</td>
+            </tr>
+            <tr>
+              <td class="icon-cell"><svg viewBox="0 0 64 64" fill="none"><path d="M10 54 L8 56 L18 50 L46 22 L52 12 L42 18 L14 46 L8 56 Z" stroke="#00FFFF" stroke-width="3" stroke-linejoin="round" fill="rgba(0,255,255,0.15)"/></svg></td>
+              <td class="name">Phantom Dagger</td><td><code>Icons.Wpn.Dagger</code></td><td>WeaponSlot</td><td>WeaponType.PHANTOM_DAGGER</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;">
+      <div class="spec-block">
+        <h4>Hard constraints (do not regress)</h4>
+        <ul>
+          <li>All Kotlin gameplay files — <code>Enemy.kt</code>, <code>Player.kt</code>, <code>Weapon.kt</code>, <code>GameLoop.kt</code>, <code>CollisionDetector.kt</code>, <code>PlayerStats.kt</code> — must stay byte-identical. No <code>radius</code>, <code>speed</code>, <code>damage</code>, <code>cooldown</code> or hitbox value changes.</li>
+          <li>The HUD bar widths and stat ranges in <code>HealthBar</code>/<code>StaminaBar</code>/<code>XpBar</code> are unchanged — we only swap the leading icon.</li>
+          <li>Weapon slot count and acquisition logic are unchanged — only the slot contents are re-skinned per <code>WeaponType</code>.</li>
+          <li>Upgrade rarity colors keep using <code>RarityColors</code>; we just re-tint the slot border instead of drawing a colored rectangle.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer note -->
+  <div class="footer-note">
+    <div class="badge">Hand-off</div>
+    <p>This document is the visual source of truth. Pass the file to Claude Code with the prompt: <i>"Implement the icons and HUD updates exactly as specified in HUD &amp; Icons.html — no gameplay file modifications."</i> Each icon's SVG path is copyable directly from the page; the implementing agent can lift the geometry into Compose <code>Path</code> calls with a 64→size scale factor.</p>
+  </div>
+
+</div>
+</body>
+</html>

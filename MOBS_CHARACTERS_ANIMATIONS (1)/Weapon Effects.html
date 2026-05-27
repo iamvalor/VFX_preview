@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Weapon Effects — Motion + Code Spec</title>
+<meta name="viewport" content="width=1440">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark:        #0A0A0F;
+  --bg-mid:         #14141F;
+  --bg-card:        #181826;
+  --bg-card-soft:   #1F1F2E;
+  --bg-code:        #0c0c14;
+  --hairline:       rgba(255,255,255,0.06);
+  --hairline-lit:   rgba(0,255,255,0.12);
+  --neon-cyan:      #00FFFF;
+  --neon-purple:   #B300FF;
+  --neon-pink:      #FF00AA;
+  --health-red:    #FF3333;
+  --stamina-green: #33FF99;
+  --xp-yellow:     #FFCC00;
+  --text-primary:  #EDEDFF;
+  --text-dim:      #8A8AA8;
+  --text-fade:     #5E5E78;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(0,255,255,0.04), transparent 60%),
+    radial-gradient(900px 500px at 90% 30%, rgba(179,0,255,0.04), transparent 60%),
+    var(--bg-dark);
+}
+.wrap { max-width: 1320px; margin: 0 auto; padding: 64px 56px 140px; }
+
+/* ===== Header ===== */
+.toplabel {
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 0.32em; color: var(--text-dim);
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+}
+.toplabel::before {
+  content: ""; width: 8px; height: 8px; background: var(--neon-cyan);
+  box-shadow: 0 0 12px var(--neon-cyan); border-radius: 1px;
+}
+h1 {
+  font-family: var(--font-mono); font-weight: 700;
+  font-size: 56px; letter-spacing: 0.06em;
+  margin: 0 0 18px; text-transform: uppercase;
+}
+h1 .accent { color: var(--neon-cyan); }
+.lede { font-size: 17px; color: var(--text-dim); max-width: 760px; line-height: 1.55; }
+.lede code {
+  font-family: var(--font-mono); font-size: 14px;
+  color: var(--neon-cyan); background: rgba(0,255,255,0.06);
+  padding: 1px 6px; border-radius: 2px;
+}
+
+/* ===== Section heads ===== */
+.sec { margin-top: 90px; }
+.sec-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 16px; margin-bottom: 32px;
+}
+.sec-head h2 {
+  font-family: var(--font-mono); font-size: 13px;
+  letter-spacing: 0.36em; text-transform: uppercase;
+  color: var(--neon-cyan); margin: 0; font-weight: 700;
+}
+.sec-head h2 .num { color: var(--text-fade); font-weight: 400; margin-right: 14px; }
+.sec-head .meta {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.2em; color: var(--text-fade);
+  text-transform: uppercase;
+}
+
+/* ===== Overview row ===== */
+.overview {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  margin-bottom: 8px;
+}
+.ov-card {
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 12px;
+  position: relative;
+}
+.ov-card canvas {
+  display: block; width: 100%; height: 140px;
+  border-radius: 3px;
+  background: var(--bg-code);
+}
+.ov-card .name {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-primary); margin-top: 10px; font-weight: 600;
+}
+.ov-card .sub {
+  font-family: var(--font-mono); font-size: 9px;
+  color: var(--text-fade); letter-spacing: 0.1em;
+  text-transform: uppercase; margin-top: 2px;
+}
+
+/* ===== Per-weapon section ===== */
+.weapon {
+  margin-top: 64px;
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 28px 32px 32px;
+  position: relative;
+}
+.weapon::before {
+  content: ""; position: absolute; top: 12px; right: 12px;
+  width: 16px; height: 16px;
+  border-top: 1px solid var(--neon-cyan);
+  border-right: 1px solid var(--neon-cyan); opacity: 0.45;
+}
+.wpn-head {
+  display: flex; align-items: baseline; gap: 14px;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 16px; margin-bottom: 22px;
+}
+.wpn-head .num {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-fade); letter-spacing: 0.2em;
+}
+.wpn-head h3 {
+  font-family: var(--font-mono); font-size: 22px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin: 0; color: var(--text-primary); font-weight: 700;
+}
+.wpn-head .shape {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--neon-cyan);
+  padding: 3px 8px; background: rgba(0,255,255,0.06);
+  border: 1px solid rgba(0,255,255,0.2);
+  border-radius: 2px;
+}
+.wpn-head .tag-cyan   { color: var(--neon-cyan);    background: rgba(0,255,255,0.06);  border-color: rgba(0,255,255,0.2); }
+.wpn-head .tag-purple { color: var(--neon-purple);  background: rgba(179,0,255,0.06);  border-color: rgba(179,0,255,0.2); }
+.wpn-head .tag-pink   { color: var(--neon-pink);    background: rgba(255,0,170,0.06);  border-color: rgba(255,0,170,0.2); }
+.wpn-head .tag-green  { color: var(--stamina-green);background: rgba(51,255,153,0.06); border-color: rgba(51,255,153,0.2); }
+
+/* Two-column: preview | spec */
+.wpn-body {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;
+  margin-bottom: 22px;
+}
+.wpn-hero {
+  background: var(--bg-code);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.wpn-hero canvas {
+  display: block; width: 100%; height: 320px;
+}
+.wpn-hero .live-tag {
+  position: absolute; top: 10px; left: 12px;
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--neon-cyan);
+  display: flex; align-items: center; gap: 6px;
+}
+.wpn-hero .live-tag::before {
+  content: ""; width: 5px; height: 5px;
+  background: var(--neon-cyan); border-radius: 50%;
+  box-shadow: 0 0 8px var(--neon-cyan);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* Spec column */
+.wpn-spec {
+  display: flex; flex-direction: column; gap: 18px;
+}
+.wpn-spec h4 {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--neon-cyan); margin: 0 0 10px; font-weight: 700;
+}
+.wpn-spec p {
+  font-size: 13px; color: var(--text-dim);
+  line-height: 1.6; margin: 0;
+}
+
+/* Timing table */
+.timing {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-mono); font-size: 11px;
+}
+.timing th, .timing td {
+  text-align: left; padding: 7px 10px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-dim);
+}
+.timing th {
+  font-size: 9px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--text-fade); font-weight: 500;
+}
+.timing td.phase {
+  color: var(--text-primary); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.timing td.t {
+  color: var(--neon-cyan);
+}
+
+/* Keyframe strip */
+.keyframes {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+  margin-bottom: 22px;
+}
+.kf {
+  background: var(--bg-code);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.kf canvas {
+  display: block; width: 100%; height: 110px;
+}
+.kf .tag {
+  position: absolute; bottom: 6px; left: 8px; right: 8px;
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.kf .tag .t { color: var(--neon-cyan); }
+
+/* Kotlin code block */
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.code-block .code-head {
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-fade);
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(255,255,255,0.02);
+  display: flex; justify-content: space-between;
+}
+.code-block pre {
+  margin: 0; padding: 14px 18px;
+  font-family: var(--font-mono); font-size: 12px;
+  line-height: 1.5; color: var(--text-primary);
+  overflow-x: auto; white-space: pre;
+  tab-size: 4;
+}
+.code-block .k { color: #FF00AA; }      /* keyword */
+.code-block .s { color: #FFCC00; }      /* string */
+.code-block .n { color: #00FFFF; }      /* number */
+.code-block .c { color: var(--text-fade); font-style: italic; }
+.code-block .f { color: #B300FF; }      /* function */
+.code-block .t { color: #33FF99; }      /* type */
+
+/* ===== Implementation notes ===== */
+.notes {
+  margin-top: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 24px 28px;
+}
+.notes h3 {
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--neon-cyan); margin: 0 0 16px; font-weight: 700;
+}
+.notes ul {
+  margin: 0; padding: 0 0 0 18px;
+  font-size: 13px; color: var(--text-dim); line-height: 1.7;
+}
+.notes ul li { padding: 2px 0; }
+.notes code {
+  font-family: var(--font-mono); font-size: 12px;
+  background: rgba(0,255,255,0.08);
+  color: var(--neon-cyan);
+  padding: 1px 6px; border-radius: 2px;
+}
+.notes b { color: var(--text-primary); font-weight: 600; }
+
+/* Footer */
+.footer-note {
+  margin-top: 64px;
+  padding: 22px 26px;
+  background: linear-gradient(180deg, rgba(0,255,255,0.04), transparent);
+  border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 6px;
+  display: flex; align-items: center; gap: 18px;
+}
+.footer-note .badge {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  padding: 6px 10px;
+  background: rgba(0,255,255,0.08);
+  border: 1px solid rgba(0,255,255,0.25);
+  border-radius: 2px;
+}
+.footer-note p {
+  font-size: 13px; color: var(--text-dim); margin: 0; line-height: 1.55;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ====================================================
+       HEADER
+       ==================================================== -->
+  <div class="toplabel">MOTION DESIGN + KOTLIN SPEC · 8 WEAPONS</div>
+  <h1>WEAPON <span class="accent">//</span> EFFECTS</h1>
+  <p class="lede">Live-animated reference for every attack visual + drop-in <code>DrawScope</code> functions for each. The dispatch lives in <code>GameScreen.kt#drawAttackVisuals(state)</code> — only that file and a new <code>WeaponEffects.kt</code> need to change. <b style="color:var(--text-primary)">Zero edits</b> to <code>Weapon.kt</code>, <code>GameLoop.kt</code>, hitbox math, or any value in <code>PlayerStats.kt</code>.</p>
+
+  <!-- ====================================================
+       OVERVIEW
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">00</span> Overview · All 8 effects</h2>
+      <span class="meta">Loops continuously · Tap into the doc to compare</span>
+    </div>
+    <div class="overview">
+      <div class="ov-card">
+        <canvas data-fx="greatsword" data-cycle="1.6" data-active="0.5"></canvas>
+        <div class="name">Protocol: Hollow</div>
+        <div class="sub">MeleeArc · Slash</div>
+      </div>
+      <div class="ov-card">
+        <canvas data-fx="needle" data-cycle="0.9" data-active="0.4"></canvas>
+        <div class="name">Needle.dll</div>
+        <div class="sub">MeleeArc 30° · Thrust</div>
+      </div>
+      <div class="ov-card">
+        <canvas data-fx="beam" data-cycle="1.8" data-active="1.2"></canvas>
+        <div class="name">Ghost Beam</div>
+        <div class="sub">LaserBeam · Cont.</div>
+      </div>
+      <div class="ov-card">
+        <canvas data-fx="pulse" data-cycle="1.6" data-active="0.7"></canvas>
+        <div class="name">Echo Wall</div>
+        <div class="sub">AuraPulse · Ring</div>
+      </div>
+      <div class="ov-card">
+        <canvas data-fx="hex" data-cycle="1.8" data-active="0.8"></canvas>
+        <div class="name">Plague.exe</div>
+        <div class="sub">AuraPulse · Hex</div>
+      </div>
+      <div class="ov-card">
+        <canvas data-fx="stack" data-cycle="2.4" data-active="1.6"></canvas>
+        <div class="name">Stack Overflow</div>
+        <div class="sub">TargetedInject</div>
+      </div>
+      <div class="ov-card">
+        <canvas data-fx="chain" data-cycle="1.8" data-active="0.9"></canvas>
+        <div class="name">Blood.hex</div>
+        <div class="sub">ChainLightning</div>
+      </div>
+      <div class="ov-card">
+        <canvas data-fx="dagger" data-cycle="1.8" data-active="1.0"></canvas>
+        <div class="name">Phantom Dagger</div>
+        <div class="sub">ProjectilePath</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       DEEP SECTIONS — one per weapon
+       Each section below is generated by the same template:
+         .weapon  → .wpn-head, .wpn-body (.wpn-hero + .wpn-spec), .keyframes, .code-block
+       ==================================================== -->
+
+  <!-- inserted by include below -->
+  <div id="weapon-sections"></div>
+
+  <!-- ====================================================
+       IMPLEMENTATION NOTES
+       ==================================================== -->
+  <div class="sec">
+    <div class="sec-head">
+      <h2><span class="num">09</span> Hand-off · Implementation</h2>
+      <span class="meta">For Claude Code · Compose Canvas</span>
+    </div>
+
+    <div class="notes">
+      <h3>File plan</h3>
+      <ul>
+        <li><b>New —</b> <code>ui/screens/WeaponEffects.kt</code> — holds all 8 <code>DrawScope.drawXxx(state)</code> functions plus the small easing helpers (<code>easeOutCubic</code>, <code>easeOutQuint</code>, <code>easeOutBack</code>).</li>
+        <li><b>Modify —</b> <code>GameScreen.kt</code> · <code>drawAttackVisuals(state)</code> — replace the current 3-way <code>when</code> with the 7-way dispatch shown below. <b>The existing 3 functions stay</b>; they just call into the new ones.</li>
+        <li><b>Untouched —</b> <code>Weapon.kt</code>, <code>Enemy.kt</code>, <code>Player.kt</code>, <code>GameLoop.kt</code>, <code>CollisionDetector.kt</code>, <code>PlayerStats.kt</code>. <b>No gameplay edits.</b></li>
+      </ul>
+
+      <h3 style="margin-top:24px;">Dispatch (drop-in replacement)</h3>
+      <div class="code-block" style="margin-top:4px;">
+        <div class="code-head"><span>GameScreen.kt</span><span>drawAttackVisuals</span></div>
+<pre><span class="k">private fun</span> <span class="t">DrawScope</span>.<span class="f">drawAttackVisuals</span>(state: <span class="t">GameStateSnapshot</span>) {
+    <span class="k">val</span> shape = state.character.startingWeapon.attackShape
+    <span class="k">when</span> (shape) {
+        <span class="k">is</span> <span class="t">AttackShape</span>.MeleeArc       -&gt;
+            <span class="k">if</span> (shape.arcRadians &lt; <span class="n">0.8f</span>) <span class="f">drawNeedleThrust</span>(state)
+            <span class="k">else</span>                           <span class="f">drawGreatswordSlash</span>(state)
+        <span class="k">is</span> <span class="t">AttackShape</span>.LaserBeam      -&gt; <span class="f">drawGhostBeam</span>(state, shape)
+        <span class="k">is</span> <span class="t">AttackShape</span>.AuraPulse      -&gt;
+            <span class="k">if</span> (shape.radius &gt;= <span class="n">400f</span>) <span class="f">drawPlagueHexBlast</span>(state, shape)
+            <span class="k">else</span>                          <span class="f">drawEchoWall</span>(state, shape)
+        <span class="t">AttackShape</span>.TargetedInject     -&gt; <span class="f">drawStackOverflow</span>(state)
+        <span class="k">is</span> <span class="t">AttackShape</span>.ChainLightning -&gt; <span class="f">drawBloodHex</span>(state, shape)
+        <span class="k">is</span> <span class="t">AttackShape</span>.ProjectilePath -&gt; <span class="f">drawPhantomDagger</span>(state)
+        <span class="k">is</span> <span class="t">AttackShape</span>.Orbit          -&gt; { <span class="c">/* drawn via projectile system */</span> }
+    }
+}</pre>
+      </div>
+
+      <h3 style="margin-top:24px;">Hard constraints</h3>
+      <ul>
+        <li>Every <code>DrawScope.drawXxx(state)</code> below is <b>read-only</b> against state — it must never write a value back.</li>
+        <li>Use <code>state.attackProgress</code> as <i>t ∈ [0,1]</i>. Never alter the gameplay's progress curve.</li>
+        <li>Sparks and trail particles are <b>visual only</b> — they don't deal damage. If you find yourself needing collision, you took a wrong turn.</li>
+        <li>Damage colors and crit thresholds come from the existing damage-number pipeline — don't reintroduce them here.</li>
+        <li>If a weapon's shape changes shape arguments (e.g. arc widens), the visual will scale automatically because every dimension is derived from <code>state.attackReach / state.attackArc / shape.*</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-note">
+    <div class="badge">Hand-off</div>
+    <p>Pass this file with the prompt: <i>"Implement <code>WeaponEffects.kt</code> per <code>Weapon Effects.html</code> and patch only <code>drawAttackVisuals</code> in <code>GameScreen.kt</code>. Don't touch any other file."</i> Each Kotlin block below is complete and drop-in — copy the function body verbatim and confirm imports.</p>
+  </div>
+
+</div>
+
+<!-- ====================================================
+     Per-weapon section template — populated at load
+     ==================================================== -->
+<script type="text/template" id="tpl-weapon">
+  <div class="weapon">
+    <div class="wpn-head">
+      <span class="num">{NUM}</span>
+      <h3>{NAME}</h3>
+      <span class="shape tag-{TAG}">{SHAPE}</span>
+    </div>
+    <div class="wpn-body">
+      <div class="wpn-hero">
+        <span class="live-tag">LIVE · {NAME}</span>
+        <canvas data-fx="{FX}" data-cycle="{CYCLE}" data-active="{ACTIVE}"></canvas>
+      </div>
+      <div class="wpn-spec">
+        <div>
+          <h4>Behavior</h4>
+          <p>{BEHAVIOR}</p>
+        </div>
+        <div>
+          <h4>Timing</h4>
+          <table class="timing">
+            <thead><tr><th>Phase</th><th>t range</th><th>Effect</th></tr></thead>
+            <tbody>{TIMING_ROWS}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="keyframes">
+      <div class="kf"><canvas data-fx="{FX}" data-frozen="0.00"></canvas><div class="tag"><span>START</span><span class="t">t=0.00</span></div></div>
+      <div class="kf"><canvas data-fx="{FX}" data-frozen="0.25"></canvas><div class="tag"><span>25%</span><span class="t">t=0.25</span></div></div>
+      <div class="kf"><canvas data-fx="{FX}" data-frozen="0.50"></canvas><div class="tag"><span>PEAK</span><span class="t">t=0.50</span></div></div>
+      <div class="kf"><canvas data-fx="{FX}" data-frozen="0.75"></canvas><div class="tag"><span>75%</span><span class="t">t=0.75</span></div></div>
+      <div class="kf"><canvas data-fx="{FX}" data-frozen="1.00"></canvas><div class="tag"><span>END</span><span class="t">t=1.00</span></div></div>
+    </div>
+    <div class="code-block">
+      <div class="code-head"><span>WeaponEffects.kt</span><span>{KOTLIN_FN}</span></div>
+<pre>{KOTLIN}</pre>
+    </div>
+  </div>
+</script>
+
+<script>
+// =====================================================================
+//  Weapon entries — each one's metadata feeds the template above.
+//  Keep this list in sync with effects-a.js / effects-b.js / Kotlin.
+// =====================================================================
+const WEAPONS = [
+  /* ===== 1. PROTOCOL: HOLLOW ====================================== */
+  {
+    num: '01',
+    name: 'Protocol: Hollow',
+    shape: 'MeleeArc · arc 120° · reach 115',
+    tag: 'cyan',
+    fx: 'greatsword',
+    cycle: '1.6', active: '0.5',
+    behavior: 'A 120° sweeping arc in front of the player. Three phases: a faint windup trail, a bright cyan slash with a white-hot core and outward sparks, then a quick decay. Sparks pop at the arc edge to telegraph reach.',
+    timing: [
+      ['Windup', '0.00 – 0.25', 'Faint trailing arc, alpha ramps in'],
+      ['Strike', '0.25 – 0.55', 'Full cyan arc + white core + sparks'],
+      ['Decay',  '0.55 – 1.00', 'Alpha + width fade out'],
+    ],
+    kotlinFn: 'drawGreatswordSlash',
+    kotlin:
+`private fun DrawScope.drawGreatswordSlash(state: GameStateSnapshot) {
+    val t   = state.attackProgress.coerceIn(0f, 1f)
+    val px  = state.playerX; val py = state.playerY
+    val r   = state.attackReach
+    val arc = state.attackArc
+    val ang = atan2(state.playerFacingY, state.playerFacingX)
+
+    val topLeft  = Offset(px - r, py - r)
+    val arcSize  = Size(r * 2f, r * 2f)
+    val startDeg = Math.toDegrees(ang.toDouble() - arc / 2.0).toFloat()
+    val sweepDeg = Math.toDegrees(arc.toDouble()).toFloat()
+
+    when {
+        t < 0.25f -> {                              // ── WINDUP
+            val k = t / 0.25f
+            drawArc(
+                color      = Color(0xFF00FFFF).copy(alpha = 0.25f * k),
+                startAngle = startDeg, sweepAngle = sweepDeg,
+                useCenter  = false, topLeft = topLeft, size = arcSize,
+                style      = Stroke(width = 6f * k, cap = StrokeCap.Round)
+            )
+        }
+        t < 0.55f -> {                              // ── STRIKE
+            val k = (t - 0.25f) / 0.30f
+            drawArc(Color(0xFF00FFFF), startDeg, sweepDeg, false, topLeft, arcSize,
+                style = Stroke(width = 14f, cap = StrokeCap.Round))
+            drawArc(Color.White, startDeg + 5f, sweepDeg - 10f, false, topLeft, arcSize,
+                style = Stroke(width = 5f, cap = StrokeCap.Round))
+            val sparkR = r * (0.85f + 0.30f * easeOutCubic(k))
+            for (i in 0 until 14) {
+                val sa = ang + (i - 6.5f) * 0.16f
+                drawCircle(
+                    color  = Color.White.copy(alpha = 1f - k * 0.7f),
+                    radius = 2.5f + 2.5f * (1f - k),
+                    center = Offset(px + cos(sa) * sparkR, py + sin(sa) * sparkR)
+                )
+            }
+        }
+        else -> {                                   // ── DECAY
+            val k = (t - 0.55f) / 0.45f
+            drawArc(
+                color      = Color(0xFF00FFFF).copy(alpha = 0.6f * (1f - k)),
+                startAngle = startDeg, sweepAngle = sweepDeg,
+                useCenter  = false, topLeft = topLeft, size = arcSize,
+                style      = Stroke(width = 8f * (1f - k * 0.7f), cap = StrokeCap.Round)
+            )
+        }
+    }
+}`,
+  },
+
+  /* ===== 2. NEEDLE.DLL ============================================ */
+  {
+    num: '02',
+    name: 'Needle.dll',
+    shape: 'MeleeArc · arc 30° · reach 150',
+    tag: 'cyan',
+    fx: 'needle',
+    cycle: '0.9', active: '0.4',
+    behavior: 'A precise forward thrust — a thin line extends out to maximum reach, holds for a hit frame, then snaps back. A six-spoke burst flashes at the tip on impact.',
+    timing: [
+      ['Extend',  '0.00 – 0.40', 'Line grows from player toward reach'],
+      ['Hit',     '0.40 – 0.60', 'Full length + 6-spoke burst at tip'],
+      ['Retract', '0.60 – 1.00', 'Line withdraws + burst fades'],
+    ],
+    kotlinFn: 'drawNeedleThrust',
+    kotlin:
+`private fun DrawScope.drawNeedleThrust(state: GameStateSnapshot) {
+    val t   = state.attackProgress.coerceIn(0f, 1f)
+    val px  = state.playerX; val py = state.playerY
+    val fx  = state.playerFacingX; val fy = state.playerFacingY
+    val reach = state.attackReach
+
+    val startX = px + fx * (state.playerRadius + 4f)
+    val startY = py + fy * (state.playerRadius + 4f)
+
+    val len = when {
+        t < 0.40f -> reach * easeOutQuint(t / 0.40f)
+        t < 0.60f -> reach
+        else      -> reach * (1f - easeInCubic((t - 0.60f) / 0.40f))
+    }
+    val alpha = if (t > 0.60f) 1f - (t - 0.60f) / 0.40f else 1f
+    val tipX  = startX + fx * len
+    val tipY  = startY + fy * len
+
+    drawLine(
+        color = Color(0xFF00FFFF).copy(alpha = alpha),
+        start = Offset(startX, startY), end = Offset(tipX, tipY),
+        strokeWidth = 3f, cap = StrokeCap.Round
+    )
+    drawLine(
+        color = Color.White.copy(alpha = 0.7f * alpha),
+        start = Offset(startX, startY), end = Offset(tipX, tipY),
+        strokeWidth = 1.2f, cap = StrokeCap.Round
+    )
+
+    // Tip burst during hit window
+    if (t in 0.40f..0.85f) {
+        val k = ((t - 0.40f) / 0.45f).coerceIn(0f, 1f)
+        for (i in 0 until 6) {
+            val a = i * (PI.toFloat() / 3f)
+            val br = 6f + 14f * k
+            drawCircle(
+                Color(0xFF00FFFF).copy(alpha = 1f - k),
+                radius = 2f,
+                center = Offset(tipX + cos(a) * br, tipY + sin(a) * br)
+            )
+        }
+        drawCircle(Color.White.copy(alpha = 1f - k), radius = 5f, center = Offset(tipX, tipY))
+    }
+}`,
+  },
+
+  /* ===== 3. GHOST BEAM ============================================ */
+  {
+    num: '03',
+    name: 'Ghost Beam',
+    shape: 'LaserBeam · w 20 · maxLen 2000',
+    tag: 'purple',
+    fx: 'beam',
+    cycle: '1.8', active: '1.2',
+    behavior: 'Triple-layered laser: outer purple halo, mid cyan, white-hot core. Heat-shimmer particles rise along the beam during steady fire. Tip pops a bright burst at peak intensity.',
+    timing: [
+      ['Ramp',    '0.00 – 0.10', 'Beam grows from emitter to full length'],
+      ['Steady',  '0.10 – 0.80', 'Full intensity + heat shimmer'],
+      ['Decay',   '0.80 – 1.00', 'Intensity drops, beam thins'],
+    ],
+    kotlinFn: 'drawGhostBeam',
+    kotlin:
+`private fun DrawScope.drawGhostBeam(state: GameStateSnapshot, shape: AttackShape.LaserBeam) {
+    val t   = state.attackProgress.coerceIn(0f, 1f)
+    val px  = state.playerX; val py = state.playerY
+    val fx  = state.playerFacingX; val fy = state.playerFacingY
+    val sx  = px + fx * (state.playerRadius + 4f)
+    val sy  = py + fy * (state.playerRadius + 4f)
+
+    val (intensity, length) = when {
+        t < 0.10f -> t / 0.10f to easeOutCubic(t / 0.10f) * shape.maxLength
+        t < 0.80f -> 1f        to shape.maxLength
+        else      -> (1f - (t - 0.80f) / 0.20f * 0.7f) to shape.maxLength
+    }
+    val ex = sx + fx * length
+    val ey = sy + fy * length
+
+    // Outer purple halo
+    drawLine(Color(0xFFB300FF).copy(alpha = 0.55f * intensity),
+        Offset(sx, sy), Offset(ex, ey), strokeWidth = 22f, cap = StrokeCap.Round)
+    // Mid cyan
+    drawLine(Color(0xFF00FFFF).copy(alpha = 0.90f * intensity),
+        Offset(sx, sy), Offset(ex, ey), strokeWidth = 9f, cap = StrokeCap.Round)
+    // White-hot core
+    drawLine(Color.White.copy(alpha = intensity),
+        Offset(sx, sy), Offset(ex, ey), strokeWidth = 2.5f, cap = StrokeCap.Round)
+
+    // Heat shimmer particles
+    val perp = Offset(-fy, fx)
+    val shimmerCount = 8
+    for (i in 0 until shimmerCount) {
+        val ph = ((t * 2f) + i.toFloat() / shimmerCount) % 1f
+        val along = sx + fx * (length * i / shimmerCount) + perp.x * (-22f * ph)
+        val acrss = sy + fy * (length * i / shimmerCount) + perp.y * (-22f * ph)
+        val a = (1f - ph) * 0.45f * intensity
+        drawCircle(Color(0xFFFF80FF).copy(alpha = a), 1.5f, Offset(along, acrss))
+    }
+
+    // Tip burst
+    if (intensity > 0.3f) {
+        drawCircle(Color(0xFFB300FF).copy(alpha = 0.5f * intensity), 14f, Offset(ex, ey))
+        drawCircle(Color.White.copy(alpha = intensity),               5f,  Offset(ex, ey))
+    }
+}`,
+  },
+
+  /* ===== 4. ECHO WALL ============================================= */
+  {
+    num: '04',
+    name: 'Echo Wall',
+    shape: 'AuraPulse · radius 220',
+    tag: 'cyan',
+    fx: 'pulse',
+    cycle: '1.6', active: '0.7',
+    behavior: 'Three staggered cyan rings expand outward from the player. An inner solid disc fades quickly. Enemies caught by an expanding ring flash white at the exact moment the ring crosses their hitbox.',
+    timing: [
+      ['Disc',   '0.00 – 0.35', 'Inner glow disc, fades out as it grows'],
+      ['Rings',  '0.00 – 1.00', 'R1 at 0%, R2 at 8%, R3 at 16% (staggered)'],
+      ['Fade',   '0.50 – 1.00', 'All rings alpha-out'],
+    ],
+    kotlinFn: 'drawEchoWall',
+    kotlin:
+`private fun DrawScope.drawEchoWall(state: GameStateSnapshot, shape: AttackShape.AuraPulse) {
+    val t  = state.attackProgress.coerceIn(0f, 1f)
+    val px = state.playerX; val py = state.playerY
+    val center = Offset(px, py)
+    val maxR = shape.radius
+
+    // Three staggered expanding rings
+    for (i in 0 until 3) {
+        val delay = i * 0.08f
+        val tt = ((t - delay) / (1f - delay)).coerceIn(0f, 1f)
+        if (tt <= 0f) continue
+        val r = maxR * easeOutQuint(tt)
+        val a = (1f - tt) * if (i == 0) 1f else 0.5f
+        drawCircle(
+            color  = Color(0xFF00FFFF).copy(alpha = a),
+            radius = r,
+            center = center,
+            style  = Stroke(width = 3f + (1f - tt) * 4f)
+        )
+    }
+
+    // Inner solid disc that fades fast
+    if (t < 0.35f) {
+        val k = t / 0.35f
+        drawCircle(
+            color  = Color(0xFF00FFFF).copy(alpha = (1f - k) * 0.55f),
+            radius = 28f + 20f * k,
+            center = center
+        )
+    }
+}`,
+  },
+
+  /* ===== 5. PLAGUE.EXE ============================================ */
+  {
+    num: '05',
+    name: 'Plague.exe',
+    shape: 'AuraPulse · radius 600',
+    tag: 'pink',
+    fx: 'hex',
+    cycle: '1.8', active: '0.8',
+    behavior: 'A rotating inner hexagon materializes, then an outer hex grid expands to max radius with a swarm of magenta "virus" dots scattering radially. The visual reads as digital corruption spreading.',
+    timing: [
+      ['Form',   '0.00 – 0.20', 'Inner hex materializes + rotates'],
+      ['Burst',  '0.20 – 0.65', 'Outer hex expands + virus dots scatter'],
+      ['Decay',  '0.65 – 1.00', 'Everything fades, dots keep drifting'],
+    ],
+    kotlinFn: 'drawPlagueHexBlast',
+    kotlin:
+`private fun DrawScope.drawPlagueHexBlast(state: GameStateSnapshot, shape: AttackShape.AuraPulse) {
+    val t  = state.attackProgress.coerceIn(0f, 1f)
+    val px = state.playerX; val py = state.playerY
+    val maxR = shape.radius
+
+    fun hexPath(cx: Float, cy: Float, r: Float, rot: Float): Path {
+        val p = Path()
+        for (i in 0 until 6) {
+            val a = rot + i * (PI.toFloat() / 3f)
+            val x = cx + cos(a) * r; val y = cy + sin(a) * r
+            if (i == 0) p.moveTo(x, y) else p.lineTo(x, y)
+        }
+        p.close(); return p
+    }
+
+    val rot = t * PI.toFloat() * 0.6f
+    val phase = when { t < 0.20f -> 0; t < 0.65f -> 1; else -> 2 }
+
+    // Inner hex
+    val burstScale = when (phase) {
+        0 -> 0.6f + 0.4f * (t / 0.20f)
+        1 -> 1f + 0.4f * easeOutCubic((t - 0.20f) / 0.45f)
+        else -> 1.4f
+    }
+    val innerA = if (phase == 2) (1f - (t - 0.65f) / 0.35f) * 0.8f else 1f
+    val innerR = 26f * burstScale
+    drawPath(hexPath(px, py, innerR, rot),
+        color = Color(0xFFFF00AA).copy(alpha = 0.18f * innerA))
+    drawPath(hexPath(px, py, innerR, rot),
+        color = Color(0xFFFF00AA).copy(alpha = innerA),
+        style = Stroke(width = 2.5f, join = StrokeJoin.Round))
+
+    // Outer expanding hex
+    if (phase >= 1) {
+        val outerK = if (phase == 1) easeOutQuint((t - 0.20f) / 0.45f) else 1f
+        val outerA = if (phase == 1) 1f - outerK * 0.5f else (1f - (t - 0.65f) / 0.35f) * 0.5f
+        drawPath(hexPath(px, py, maxR * outerK, -rot * 0.5f),
+            color = Color(0xFFFF00AA).copy(alpha = outerA),
+            style = Stroke(width = 2.2f, join = StrokeJoin.Round))
+    }
+}`,
+  },
+
+  /* ===== 6. STACK OVERFLOW ======================================== */
+  {
+    num: '06',
+    name: 'Stack Overflow',
+    shape: 'TargetedInject',
+    tag: 'green',
+    fx: 'stack',
+    cycle: '2.4', active: '1.6',
+    behavior: 'A green injection beam travels from the player to the nearest target. On impact, a "STACK ×N" pill pops above the target with a slight bounce (back-out easing). Drip particles fall as the stack lingers.',
+    timing: [
+      ['Inject',  '0.00 – 0.15', 'Beam draws player → target'],
+      ['Pop',     '0.15 – 0.30', 'STACK ×N pill bounces in (easeOutBack)'],
+      ['Linger',  '0.30 – 1.00', 'Pill rises + fades, beam fades, drips fall'],
+    ],
+    kotlinFn: 'drawStackOverflow',
+    kotlin:
+`private fun DrawScope.drawStackOverflow(state: GameStateSnapshot) {
+    val t  = state.attackProgress.coerceIn(0f, 1f)
+    val px = state.playerX; val py = state.playerY
+    val target = state.attackTarget ?: return        // GameLoop sets this; null = no-op
+    val tx = target.x; val ty = target.y
+
+    val phase = when { t < 0.15f -> 0; t < 0.30f -> 1; else -> 2 }
+
+    // Beam
+    val beamA = if (phase == 2) 1f - ((t - 0.30f) / 0.70f) * 0.85f else 1f
+    val drawLen = if (phase == 0) t / 0.15f else 1f
+    val endX = px + (tx - px) * drawLen
+    val endY = py + (ty - py) * drawLen
+    drawLine(Color(0xFF33FF99).copy(alpha = beamA * 0.9f),
+        Offset(px, py), Offset(endX, endY), strokeWidth = 4f, cap = StrokeCap.Round)
+    drawLine(Color.White.copy(alpha = beamA),
+        Offset(px, py), Offset(endX, endY), strokeWidth = 1.5f, cap = StrokeCap.Round)
+
+    // Pill counter
+    if (phase >= 1) {
+        val k = if (phase == 1) easeOutBack((t - 0.15f) / 0.15f) else 1f
+        val pillA = if (phase == 2) 1f - (t - 0.30f) / 0.70f * 0.4f else 1f
+        val yOff  = if (phase == 1) -28f - 14f * k else -42f - ((t - 0.30f) / 0.70f) * 16f
+        val stackCount = target.stackCount  // expose via GameStateSnapshot
+        drawStackPill(tx, ty + yOff, stackCount, k, pillA)
+    }
+}
+
+private fun DrawScope.drawStackPill(x: Float, y: Float, count: Int, scale: Float, alpha: Float) {
+    val w = 52f * scale; val h = 18f * scale
+    drawRoundRect(
+        color = Color(0xFF081410).copy(alpha = alpha),
+        topLeft = Offset(x - w/2, y - h/2),
+        size    = Size(w, h),
+        cornerRadius = CornerRadius(4f * scale)
+    )
+    drawRoundRect(
+        color = Color(0xFF33FF99).copy(alpha = alpha),
+        topLeft = Offset(x - w/2, y - h/2),
+        size    = Size(w, h),
+        cornerRadius = CornerRadius(4f * scale),
+        style = Stroke(width = 1.5f)
+    )
+    drawIntoCanvas { canvas ->
+        val paint = android.graphics.Paint().apply {
+            color = Color(0xFF33FF99).copy(alpha = alpha).toArgb()
+            textAlign = android.graphics.Paint.Align.CENTER
+            textSize = 11f * scale
+            typeface = android.graphics.Typeface.MONOSPACE
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        canvas.nativeCanvas.drawText("STACK ×$count", x, y + 4f, paint)
+    }
+}`,
+  },
+
+  /* ===== 7. BLOOD.HEX ============================================= */
+  {
+    num: '07',
+    name: 'Blood.hex',
+    shape: 'ChainLightning · 4 bounces · 120',
+    tag: 'pink',
+    fx: 'chain',
+    cycle: '1.8', active: '0.9',
+    behavior: 'Sequential jagged lightning arcs: player → first enemy, then to each bounce target. Path is re-rolled every frame so the bolt crackles. Pink halo + white core; impact spark at every endpoint.',
+    timing: [
+      ['Strike 1', '0.00', 'Arc to nearest enemy'],
+      ['Strike 2', '0.10', 'Arc to bounce 1'],
+      ['Strike 3', '0.20', 'Arc to bounce 2'],
+      ['Decay',    '+0.70', 'Each arc visible for 0.70s, fades to 0'],
+    ],
+    kotlinFn: 'drawBloodHex',
+    kotlin:
+`private fun DrawScope.drawBloodHex(
+    state: GameStateSnapshot,
+    shape: AttackShape.ChainLightning,
+) {
+    val t  = state.attackProgress.coerceIn(0f, 1f)
+    val px = state.playerX; val py = state.playerY
+    val chain = state.chainTargets   // GameLoop already builds this list
+
+    var lastX = px; var lastY = py
+    chain.forEachIndexed { i, e ->
+        val strikeAt = i * 0.10f
+        if (t < strikeAt) return@forEachIndexed
+        val localT = ((t - strikeAt) / 0.70f).coerceIn(0f, 1f)
+        if (localT >= 1f) { lastX = e.x; lastY = e.y; return@forEachIndexed }
+        val a = 1f - localT
+
+        val pts = jaggedPath(lastX, lastY, e.x, e.y, segments = 8, amp = 10f,
+                             seed = (i + 1) * 1000 + (t * 60f).toInt())
+        // Outer pink halo
+        drawJagged(pts, Color(0xFFFF00AA).copy(alpha = 0.7f * a), strokeWidth = 6f)
+        // White-hot core
+        drawJagged(pts, Color.White.copy(alpha = a), strokeWidth = 1.5f)
+        // Endpoint spark
+        if (localT < 0.4f) {
+            val spark = (1f - localT / 0.4f)
+            drawCircle(Color(0xFFFF00AA).copy(alpha = spark), radius = 9f, center = Offset(e.x, e.y))
+        }
+        lastX = e.x; lastY = e.y
+    }
+}
+
+private fun jaggedPath(x1: Float, y1: Float, x2: Float, y2: Float,
+                       segments: Int, amp: Float, seed: Int): List<Offset> {
+    val rng = kotlin.random.Random(seed)
+    val len  = hypot(x2 - x1, y2 - y1)
+    val perpX = -(y2 - y1) / len; val perpY = (x2 - x1) / len
+    val out = mutableListOf(Offset(x1, y1))
+    for (i in 1 until segments) {
+        val k = i.toFloat() / segments
+        val off = (rng.nextFloat() - 0.5f) * 2f * amp
+        out += Offset(x1 + (x2 - x1) * k + perpX * off, y1 + (y2 - y1) * k + perpY * off)
+    }
+    out += Offset(x2, y2)
+    return out
+}
+
+private fun DrawScope.drawJagged(pts: List<Offset>, color: Color, strokeWidth: Float) {
+    val path = Path().apply {
+        pts.forEachIndexed { i, p -> if (i == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y) }
+    }
+    drawPath(path, color = color, style = Stroke(width = strokeWidth,
+        cap = StrokeCap.Round, join = StrokeJoin.Round))
+}`,
+  },
+
+  /* ===== 8. PHANTOM DAGGER ======================================== */
+  {
+    num: '08',
+    name: 'Phantom Dagger',
+    shape: 'ProjectilePath · 500 px/s · radius 6',
+    tag: 'cyan',
+    fx: 'dagger',
+    cycle: '1.8', active: '1.0',
+    behavior: 'A spinning dagger silhouette with a fading particle trail. Trail uses 14 lagged samples behind the projectile. Impact burst on contact: 8 radial sparks + a white flash.',
+    timing: [
+      ['Flight',  '0.00 – 0.85', 'Dagger spins forward + trail follows'],
+      ['Impact',  '0.85 – 1.00', '8-spoke spark burst + white flash'],
+    ],
+    kotlinFn: 'drawPhantomDagger',
+    kotlin:
+`// Called per-projectile from the projectile loop, not from drawAttackVisuals.
+fun DrawScope.drawPhantomDagger(proj: ProjectileSnapshot) {
+    val dx = proj.x; val dy = proj.y
+    val ang = atan2(proj.vy, proj.vx)
+    val spin = proj.lifeT * (PI.toFloat() * 4f)     // continuous spin
+
+    // Trail particles BEHIND the dagger
+    val trailCount = 14
+    for (i in 1..trailCount) {
+        val lag = i / trailCount.toFloat() * 18f          // px behind, along velocity
+        val tx = dx - cos(ang) * lag
+        val ty = dy - sin(ang) * lag
+        val a  = (1f - i / trailCount.toFloat()) * 0.7f
+        val sz = 4f - (i / trailCount.toFloat()) * 3f
+        drawCircle(Color(0xFF00FFFF).copy(alpha = a), radius = sz, center = Offset(tx, ty))
+    }
+
+    // Dagger silhouette
+    withTransform({
+        translate(dx, dy)
+        rotate(Math.toDegrees(ang.toDouble()).toFloat() + Math.toDegrees(spin.toDouble()).toFloat())
+    }) {
+        val path = Path().apply {
+            moveTo(-14f,  0f); lineTo(-10f, -3f); lineTo(14f, -1f)
+            lineTo( 16f,  0f); lineTo( 14f,  1f); lineTo(-10f, 3f); close()
+        }
+        drawPath(path, color = Color(0xFF00FFFF).copy(alpha = 0.95f))
+        drawLine(Color.White, Offset(-10f, 0f), Offset(14f, 0f), strokeWidth = 1.2f)
+    }
+}
+
+// Impact burst — call from the projectile's onHit callback (visual only).
+fun DrawScope.drawDaggerImpact(x: Float, y: Float, k: Float) {     // k ∈ [0,1]
+    for (i in 0 until 8) {
+        val a = i * (PI.toFloat() / 4f)
+        val r = 10f + 18f * k
+        drawCircle(
+            color  = Color(0xFF00FFFF).copy(alpha = 1f - k),
+            radius = 3f * (1f - k),
+            center = Offset(x + cos(a) * r, y + sin(a) * r)
+        )
+    }
+    drawCircle(Color.White.copy(alpha = 1f - k), radius = 6f + 8f * k, center = Offset(x, y))
+}`,
+  },
+];
+
+// ---- Render sections ----
+const tpl = document.getElementById('tpl-weapon').textContent;
+const host = document.getElementById('weapon-sections');
+const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+host.innerHTML = WEAPONS.map(w => {
+  const rows = w.timing.map(([p, r, e]) =>
+    `<tr><td class="phase">${p}</td><td class="t">${r}</td><td>${e}</td></tr>`
+  ).join('');
+  return tpl
+    .replace(/\{NUM\}/g, w.num)
+    .replace(/\{NAME\}/g, w.name)
+    .replace(/\{SHAPE\}/g, w.shape)
+    .replace(/\{TAG\}/g, w.tag)
+    .replace(/\{FX\}/g, w.fx)
+    .replace(/\{CYCLE\}/g, w.cycle)
+    .replace(/\{ACTIVE\}/g, w.active)
+    .replace(/\{BEHAVIOR\}/g, w.behavior)
+    .replace(/\{TIMING_ROWS\}/g, rows)
+    .replace(/\{KOTLIN_FN\}/g, w.kotlinFn)
+    .replace(/\{KOTLIN\}/g, escape(w.kotlin));
+}).join('');
+</script>
+
+<!-- Effect scripts -->
+<script src="weapon-fx/core.js"></script>
+<script src="weapon-fx/effects-a.js"></script>
+<script src="weapon-fx/effects-b.js"></script>
+<script src="weapon-fx/runner.js"></script>
+</body>
+</html>
